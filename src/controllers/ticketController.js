@@ -154,9 +154,10 @@ exports.addMessage = async (req, res) => {
     const { id } = req.params;
     let { content } = req.body;
     
-    console.log('Adding message to ticket:', id);
+    console.log(`Request to add message to ticket: ${id}`);
+    console.log('User role:', req.session.user.role);
     console.log('Request body:', req.body);
-    console.log('File:', req.file);
+    console.log('File:', req.file ? `${req.file.filename} (${req.file.size} bytes)` : 'No file');
     
     // Create message data object
     let messageData = {
@@ -171,6 +172,27 @@ exports.addMessage = async (req, res) => {
         contentType: 'image',
         fileUrl: `/uploads/tickets/${path.basename(req.file.path)}`
       };
+      
+      // Allow mixed content types when both image and substantial text are present
+      if (content && content.trim().length > 0) {
+        console.log('Message contains both image and text');
+        // Create a text message first
+        const textResult = await ticketService.addMessage(
+          id,
+          req.session.user.id,
+          {
+            content: content,
+            contentType: 'text'
+          }
+        );
+        
+        if (!textResult.success) {
+          return res.status(400).json({
+            success: false,
+            message: textResult.message
+          });
+        }
+      }
     }
     
     // Ensure we have either content or an image
@@ -196,10 +218,10 @@ exports.addMessage = async (req, res) => {
       });
     }
     
-    console.log('Message added successfully');
+    console.log(`Message added successfully: ${result.message._id}`);
     res.status(201).json({
       success: true,
-      message: result.message
+      message: result.message // Send the full message object back to client
     });
   } catch (error) {
     console.error('Error in addMessage:', error);

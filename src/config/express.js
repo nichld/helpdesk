@@ -6,8 +6,9 @@ const authMiddleware = require('../middleware/auth');
 /**
  * Configure Express application with middleware and settings
  * @param {Express} app - The Express application
+ * @param {Object} options - Configuration options
  */
-exports.configureExpress = (app) => {
+exports.configureExpress = (app, { configureSession }) => {
   // Set up view engine and layouts
   app.use(expressLayouts);
   app.set("view engine", "ejs");
@@ -24,6 +25,12 @@ exports.configureExpress = (app) => {
   app.use(express.urlencoded({ extended: false }));
   app.use(express.json());
   
-  // Set current user for views
+  // Set up session middleware
+  const sessionMiddleware = configureSession();
+  app.use(sessionMiddleware);
+  
+  // Set current user for views (after session middleware)
   app.use(authMiddleware.setCurrentUser);
+  
+  return { sessionMiddleware };
 };

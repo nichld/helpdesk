@@ -169,8 +169,10 @@ exports.updateTicket = async (ticketId, updateData) => {
 exports.addMessage = async (ticketId, userId, messageData) => {
   try {
     const ticket = await Ticket.findById(ticketId);
+    console.log(`Adding message to ticket ${ticketId} by user ${userId}`);
     
     if (!ticket) {
+      console.log(`Ticket not found: ${ticketId}`);
       return {
         success: false,
         message: 'Ticket not found'
@@ -180,18 +182,20 @@ exports.addMessage = async (ticketId, userId, messageData) => {
     // For image uploads, only fileUrl is required
     // For text messages, content is required
     if (messageData.contentType === 'text' && !messageData.content.trim()) {
+      console.log('Empty text message rejected');
       return {
         success: false,
         message: 'Text message content is required'
       };
     } else if (messageData.contentType === 'image' && !messageData.fileUrl) {
+      console.log('Image message with no file rejected');
       return {
         success: false,
         message: 'Image file is required'
       };
     }
     
-    console.log('Creating message with data:', messageData);
+    console.log('Creating message with data:', JSON.stringify(messageData));
     
     // Create the message
     const message = await Message.create({
@@ -200,6 +204,8 @@ exports.addMessage = async (ticketId, userId, messageData) => {
       ...messageData,
       read: [{ user: userId }] // Mark as read by sender
     });
+    
+    console.log(`Message created with ID: ${message._id}`);
     
     // Populate sender info
     await message.populate('sender', 'firstName lastName email profileImage role');
@@ -212,8 +218,13 @@ exports.addMessage = async (ticketId, userId, messageData) => {
     try {
       const io = getIO();
       if (io) {
-        console.log(`Emitting new-message event to ticket-${ticketId}`);
+        console.log(`Emitting new-message event to room ticket-${ticketId}`);
         io.to(`ticket-${ticketId}`).emit('new-message', { message });
+        
+        // Log how many clients are in this room
+        const room = io.sockets.adapter.rooms.get(`ticket-${ticketId}`);
+        const clientCount = room ? room.size : 0;
+        console.log(`Room ticket-${ticketId} has ${clientCount} clients connected`);
       } else {
         console.warn('Socket.IO not initialized, cannot emit events');
       }
@@ -224,7 +235,7 @@ exports.addMessage = async (ticketId, userId, messageData) => {
     
     return {
       success: true,
-      message
+      message: message // Return the complete message object
     };
   } catch (error) {
     console.error('Error adding message:', error);

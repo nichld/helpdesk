@@ -15,12 +15,16 @@ const initializeSocket = (server) => {
   // Authentication middleware for socket.io
   io.use((socket, next) => {
     try {
+      console.log(`Socket authentication attempt: ${socket.id}`);
+      
       if (!socket.handshake.headers.cookie) {
+        console.log('Socket auth failed: No cookie provided');
         return next(new Error('No cookie provided'));
       }
       
       // Parse the cookies
       const parsedCookie = cookie.parse(socket.handshake.headers.cookie);
+      console.log('Cookie parsed, session cookie present:', Boolean(parsedCookie['connect.sid']));
       
       // Extract session ID
       const sessionID = cookieParser.signedCookie(
@@ -29,9 +33,11 @@ const initializeSocket = (server) => {
       );
       
       if (!sessionID) {
-        console.log('Invalid session ID in socket handshake');
+        console.log('Socket auth failed: Invalid session ID in socket handshake');
         return next(new Error('Invalid session'));
       }
+      
+      console.log(`Found valid sessionID: ${sessionID.substring(0, 8)}...`);
       
       // Get the session from the store
       const sessionStore = MongoStore.create({
@@ -40,14 +46,24 @@ const initializeSocket = (server) => {
       });
       
       sessionStore.get(sessionID, (err, session) => {
-        if (err || !session || !session.user) {
-          console.log('Session retrieval error or no user in session', err);
-          return next(new Error('Authentication error'));
+        if (err) {
+          console.log('Session retrieval error:', err);
+          return next(new Error('Session retrieval error'));
+        }
+        
+        if (!session) {
+          console.log('Socket auth failed: No session found');
+          return next(new Error('No session found'));
+        }
+        
+        if (!session.user) {
+          console.log('Socket auth failed: No user in session');
+          return next(new Error('No user in session'));
         }
         
         // Attach user to the socket for future reference
         socket.user = session.user;
-        console.log(`User authenticated in socket: ${socket.user.id}`);
+        console.log(`User authenticated in socket: ${socket.user.id} (${socket.user.role})`);
         next();
       });
     } catch (error) {
@@ -62,11 +78,47 @@ const initializeSocket = (server) => {
     
     // Join ticket rooms
     socket.on('join-ticket', (ticketId) => {
-      if (!ticketId) return;
+      if (!ticketId) {
+        console.log('Join ticket event with no ticketId');
+        return;
+      }
       
       const roomName = `ticket-${ticketId}`;
       socket.join(roomName);
-      console.log(`User ${socket.user.id} joined ${roomName}`);
+      console.log(`User ${socket.user.id} (${socket.user.role}) joined room ${roomName}`);
+      
+      // Send acknowledgement back to client
+      socket.emit('joined-ticket', { ticketId, success: true });
+      
+      // Broadcast to others in the room that someone joined
+      socket.to(roomName).emit('user-joined', {
+        userId: socket.user.id,
+        userName: `${socket.user.firstName} ${socket.user.lastName}`,
+        userRole: socket.user.role
+      });
+    });
+    
+    // Check if user is in a room
+    socket.on('check-room', (ticketId) => {
+      const roomName = `ticket-${ticketId}`;
+      const room = io.sockets.adapter.rooms.get(roomName);
+      const clientCount = room ? room.size : 0;
+      const isInRoom = room ? room.has(socket.id) : false;
+      
+      console.log(`Room status check - ${roomName}: ${clientCount} clients, socket ${isInRoom ? 'is' : 'is NOT'} in room`);
+      
+      socket.emit('room-status', {
+        ticketId,
+        inRoom: isInRoom,
+        clientCount: clientCount
+      });
+      
+      // If not in room, try to rejoin
+      if (!isInRoom) {
+        socket.join(roomName);
+        console.log(`Rejoined user ${socket.user.id} to room ${roomName}`);
+        socket.emit('joined-ticket', { ticketId, success: true });
+      }
     });
     
     // Leave ticket rooms
@@ -79,8 +131,8 @@ const initializeSocket = (server) => {
     });
     
     // Handle disconnect
-    socket.on('disconnect', () => {
-      console.log(`Socket disconnected: ${socket.id}`);
+    socket.on('disconnect', (reason) => {
+      console.log(`Socket disconnected: ${socket.id}, Reason: ${reason}`);
     });
   });
   

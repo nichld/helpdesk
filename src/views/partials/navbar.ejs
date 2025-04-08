@@ -12,18 +12,52 @@
             <a href="/" class="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200">
               Home
             </a>
-            <a href="/home" class="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200">
-              page
-            </a>
             
             <% if (typeof user !== 'undefined' && user) { %>
+              <!-- Customer Navigation -->
+              <% if (user.role === 'customer') { %>
+                <a href="/tickets" class="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200">
+                  My Tickets
+                </a>
+                <a href="/tickets/create" class="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200">
+                  Create Ticket
+                </a>
+              <% } %>
+              
+              <!-- Employee Navigation -->
+              <% if (user.role === 'employee') { %>
+                <a href="/admin/dashboard" class="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200">
+                  Dashboard
+                </a>
+                <a href="/admin/tickets" class="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200">
+                  All Tickets
+                </a>
+                <a href="/admin/tickets/assigned" class="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200">
+                  My Assigned
+                </a>
+              <% } %>
+              
+              <!-- Admin Navigation -->
+              <% if (user.role === 'admin') { %>
+                <a href="/admin/dashboard" class="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200">
+                  Dashboard
+                </a>
+                <a href="/admin/tickets" class="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200">
+                  All Tickets
+                </a>
+                <a href="/admin/tickets/assigned" class="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200">
+                  My Assigned
+                </a>
+                <a href="/users" class="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200">
+                  Users
+                </a>
+              <% } %>
+              
+              <!-- Role Badge -->
               <% if (user.role === 'admin') { %>
                 <span class="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800">
                   Admin
                 </span>
-                <a href="/users" class="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200">
-                  Users
-                </a>
               <% } else if (user.role === 'employee') { %>
                 <span class="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800">
                   Employee
@@ -66,6 +100,20 @@
                   </div>
                   <div class="border-t border-gray-100"></div>
                   <a href="/profile" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" role="menuitem">Profile</a>
+                  
+                  <!-- Customer dropdown links -->
+                  <% if (user.role === 'customer') { %>
+                    <a href="/tickets" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" role="menuitem">My Tickets</a>
+                    <a href="/tickets/create" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" role="menuitem">Create Ticket</a>
+                  <% } %>
+                  
+                  <!-- Employee/Admin dropdown links -->
+                  <% if (user.role === 'employee' || user.role === 'admin') { %>
+                    <a href="/admin/dashboard" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" role="menuitem">Dashboard</a>
+                    <a href="/admin/tickets" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" role="menuitem">All Tickets</a>
+                    <a href="/admin/tickets/assigned" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" role="menuitem">My Assigned</a>
+                  <% } %>
+                  
                   <% if (user.role === 'admin') { %>
                     <a href="/users" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" role="menuitem">Manage Users</a>
                   <% } %>
@@ -73,7 +121,7 @@
                 </div>
               </div>
             <% } else { %>
-              <!-- Login/register links remain unchanged -->
+              <!-- Login/register links -->
               <a href="/login" class="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200">
                 Login
               </a>
@@ -84,7 +132,7 @@
           </div>
         </div>
   
-        <!-- Mobile menu button remains unchanged -->
+        <!-- Mobile menu button -->
         <div class="md:hidden">
           <button 
             type="button" 
@@ -105,36 +153,59 @@
         <a href="/" class="text-gray-600 hover:text-gray-900 block px-3 py-2 rounded-md text-base font-medium">
           Home
         </a>
-        <a href="/page" class="text-gray-600 hover:text-gray-900 block px-3 py-2 rounded-md text-base font-medium">
-          page
-        </a>
         
         <% if (typeof user !== 'undefined' && user) { %>
-          <a href="/profile" class="text-gray-600 hover:text-gray-900 block px-3 py-2 rounded-md text-base font-medium">
-            Profile
-          </a>
+          <!-- Mobile Customer Links -->
+          <% if (user.role === 'customer') { %>
+            <a href="/tickets" class="text-gray-600 hover:text-gray-900 block px-3 py-2 rounded-md text-base font-medium">
+              My Tickets
+            </a>
+            <a href="/tickets/create" class="text-gray-600 hover:text-gray-900 block px-3 py-2 rounded-md text-base font-medium">
+              Create Ticket
+            </a>
+          <% } %>
+          
+          <!-- Mobile Employee/Admin Links -->
+          <% if (user.role === 'employee' || user.role === 'admin') { %>
+            <a href="/admin/dashboard" class="text-gray-600 hover:text-gray-900 block px-3 py-2 rounded-md text-base font-medium">
+              Dashboard
+            </a>
+            <a href="/admin/tickets" class="text-gray-600 hover:text-gray-900 block px-3 py-2 rounded-md text-base font-medium">
+              All Tickets
+            </a>
+            <a href="/admin/tickets/assigned" class="text-gray-600 hover:text-gray-900 block px-3 py-2 rounded-md text-base font-medium">
+              My Assigned
+            </a>
+          <% } %>
+          
+          <!-- Mobile Admin Links -->
           <% if (user.role === 'admin') { %>
             <a href="/users" class="text-gray-600 hover:text-gray-900 block px-3 py-2 rounded-md text-base font-medium">
               Manage Users
             </a>
-            <div class="px-3 py-2">
+          <% } %>
+          
+          <a href="/profile" class="text-gray-600 hover:text-gray-900 block px-3 py-2 rounded-md text-base font-medium">
+            Profile
+          </a>
+          
+          <!-- Role Badge - Mobile -->
+          <div class="px-3 py-2">
+            <% if (user.role === 'admin') { %>
               <span class="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800">
                 Admin
               </span>
-            </div>
-          <% } else if (user.role === 'employee') { %>
-            <div class="px-3 py-2">
+            <% } else if (user.role === 'employee') { %>
               <span class="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800">
                 Employee
               </span>
-            </div>
-          <% } else { %>
-            <div class="px-3 py-2">
+            <% } else { %>
               <span class="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
                 Customer
               </span>
-            </div>
-          <% } %>
+            <% } %>
+          </div>
+          
           <div class="flex items-center px-3 py-2">
             <div class="w-8 h-8 rounded-full bg-gray-100 overflow-hidden mr-3 flex items-center justify-center">
               <% if (user.profileImage) { %>
