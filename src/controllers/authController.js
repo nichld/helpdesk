@@ -1,5 +1,6 @@
 const authService = require('../services/authService');
 const User = require('../models/User');
+const path = require('path');
 
 /**
  * Renders login page
@@ -189,6 +190,52 @@ exports.updateProfile = async (req, res) => {
       title: 'Your Profile',
       user: user,
       error: 'An error occurred while updating your profile.'
+    });
+  }
+};
+
+/**
+ * Handles profile image uploads
+ */
+exports.uploadProfileImage = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: 'No image file was provided'
+      });
+    }
+
+    // Create the file URL relative to the server
+    const fileUrl = `/uploads/profiles/${path.basename(req.file.path)}`;
+    
+    // Update user with new profile image
+    const userId = req.session.user.id;
+    const user = await User.findById(userId);
+    
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+    
+    // Save the file URL to the user's profile
+    user.profileImage = fileUrl;
+    await user.save();
+    
+    // Update session
+    req.session.user.profileImage = fileUrl;
+    
+    res.status(200).json({
+      success: true,
+      profileImage: fileUrl
+    });
+  } catch (error) {
+    console.error('Error uploading profile image:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to upload profile image'
     });
   }
 };
