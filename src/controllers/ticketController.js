@@ -155,9 +155,40 @@ exports.addMessage = async (req, res) => {
     let { content } = req.body;
     
     console.log(`Request to add message to ticket: ${id}`);
+    console.log('User ID:', req.session.user.id);
     console.log('User role:', req.session.user.role);
-    console.log('Request body:', req.body);
+    console.log('Request path:', req.path);
     console.log('File:', req.file ? `${req.file.filename} (${req.file.size} bytes)` : 'No file');
+    
+    // Get the ticket to verify ownership for customers
+    const ticketResult = await ticketService.getTicketById(id);
+    
+    if (!ticketResult.success) {
+      console.log(`Ticket not found: ${id}`);
+      return res.status(404).json({
+        success: false,
+        message: 'Ticket not found'
+      });
+    }
+    
+    // Check if user is customer and owns the ticket
+    if (req.session.user.role === 'customer') {
+      const customerId = ticketResult.ticket.customer._id.toString();
+      const userId = req.session.user.id.toString();
+      
+      console.log('Ticket owner check:');
+      console.log('- Customer ID from ticket:', customerId);
+      console.log('- User ID from session:', userId);
+      console.log('- Match:', customerId === userId);
+      
+      if (customerId !== userId) {
+        console.log('Access denied: Customer trying to message a ticket they do not own');
+        return res.status(403).json({
+          success: false,
+          message: 'You do not have permission to message this ticket'
+        });
+      }
+    }
     
     // Create message data object
     let messageData = {
@@ -172,27 +203,6 @@ exports.addMessage = async (req, res) => {
         contentType: 'image',
         fileUrl: `/uploads/tickets/${path.basename(req.file.path)}`
       };
-      
-      // Allow mixed content types when both image and substantial text are present
-      if (content && content.trim().length > 0) {
-        console.log('Message contains both image and text');
-        // Create a text message first
-        const textResult = await ticketService.addMessage(
-          id,
-          req.session.user.id,
-          {
-            content: content,
-            contentType: 'text'
-          }
-        );
-        
-        if (!textResult.success) {
-          return res.status(400).json({
-            success: false,
-            message: textResult.message
-          });
-        }
-      }
     }
     
     // Ensure we have either content or an image
@@ -203,7 +213,30 @@ exports.addMessage = async (req, res) => {
         message: 'Message requires either text content or an image'
       });
     }
+    
+    // If we have both text content and image, send text message separately
+    if (req.file && content && content.trim().length > 0) {
+      console.log('Message contains both image and text');
+      
+      // First send text message
+      const textResult = await ticketService.addMessage(
+        id,
+        req.session.user.id,
+        {
+          content: content,
+          contentType: 'text'
+        }
+      );
+      
+      if (!textResult.success) {
+        return res.status(400).json({
+          success: false,
+          message: textResult.message
+        });
+      }
+    }
 
+    // Send image message if applicable, or just the text message
     const result = await ticketService.addMessage(
       id,
       req.session.user.id,

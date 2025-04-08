@@ -9,8 +9,10 @@ router.get('/tickets', ensureAuthenticated, ticketController.customerTickets);
 router.get('/tickets/create', ensureAuthenticated, ticketController.createTicketView);
 router.post('/tickets/create', ensureAuthenticated, ticketController.createTicket);
 router.get('/tickets/:id', ensureAuthenticated, ticketController.customerTicketDetail);
+
+// IMPORTANT: Make sure customer message posting doesn't require employee role
 router.post('/tickets/:id/message', 
-  ensureAuthenticated, 
+  ensureAuthenticated,  
   ticketUpload.single('image'), 
   ticketController.addMessage
 );

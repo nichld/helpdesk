@@ -4,6 +4,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title><% if (typeof title !== 'undefined') { %><%= title %><% } else { %>Drift Guides<% } %></title>
+  
+  <!-- Add custom CSS file -->
+  <link rel="stylesheet" href="/css/custom.css">
+  
   <% if (typeof style !== 'undefined') { %>
     <%- style %>
   <% } %>
@@ -30,6 +34,8 @@
     <%- script %>
   <% } %>
   <script src="/js/popup.js"></script>
+  
+  <!-- Include toast notifications script -->
   <script src="/js/toast.js"></script>
 </body>
 </html>

@@ -5,15 +5,23 @@
 const User = require('../models/User');
 
 /**
- * Ensures user is authenticated before accessing a route
+ * Middleware to ensure user is authenticated
  */
 exports.ensureAuthenticated = (req, res, next) => {
-  if (req.session && req.session.user) {
-    return next();
-  }
+  console.log('Auth check - Session:', req.session.user ? `User ${req.session.user.id} (${req.session.user.role})` : 'No user in session');
   
-  req.session.returnTo = req.originalUrl;
-  res.redirect('/login');
+  if (req.session.user) {
+    return next();
+  } else {
+    if (req.xhr || req.path.includes('/api/') || req.headers.accept.includes('application/json')) {
+      return res.status(401).json({ 
+        success: false,
+        message: 'You need to be logged in to perform this action' 
+      });
+    }
+    req.session.returnTo = req.originalUrl;
+    return res.redirect('/login');
+  }
 };
 
 /**
@@ -35,22 +43,76 @@ exports.ensureAdmin = (req, res, next) => {
 };
 
 /**
- * Ensures user is an employee or admin before accessing a route
+ * Middleware to ensure user is an employee or admin
  */
 exports.ensureEmployee = (req, res, next) => {
-  if (req.session && req.session.user && 
-      (req.session.user.role === 'employee' || req.session.user.role === 'admin')) {
-    return next();
-  }
+  console.log('Employee check - Role:', req.session.user ? req.session.user.role : 'No user');
   
-  res.status(403).render('error', {
-    title: 'Access Denied',
-    message: 'You need to be an employee to access this page',
-    error: {
-      status: 403,
-      stack: ''
+  if (req.session.user && (req.session.user.role === 'employee' || req.session.user.role === 'admin')) {
+    return next();
+  } else {
+    if (req.xhr || req.path.includes('/api/') || req.headers.accept.includes('application/json')) {
+      return res.status(403).json({ 
+        success: false, 
+        message: 'Only employees can perform this action' 
+      });
     }
-  });
+    return res.render('error', {
+      title: 'Access Denied',
+      message: 'You do not have permission to access this page',
+      error: { status: 403 }
+    });
+  }
+};
+
+/**
+ * Ensures user has access to a specific ticket
+ */
+exports.ensureTicketAccess = async (req, res, next) => {
+  try {
+    const ticketService = require('../services/ticketService');
+    const ticketId = req.params.id;
+    const userId = req.session.user.id;
+    const userRole = req.session.user.role;
+    
+    console.log(`Ticket access check: User ${userId} (${userRole}) for ticket ${ticketId}`);
+    
+    // Employees and admins always have access
+    if (userRole === 'employee' || userRole === 'admin') {
+      console.log('Access granted: Employee or admin');
+      return next();
+    }
+    
+    // Get the ticket to check ownership
+    const result = await ticketService.getTicketById(ticketId);
+    if (!result.success) {
+      return res.status(404).json({
+        success: false,
+        message: 'Ticket not found'
+      });
+    }
+    
+    // Check if user is the ticket owner
+    const ticket = result.ticket;
+    const isOwner = ticket.customer._id.toString() === userId;
+    
+    if (isOwner) {
+      console.log('Access granted: Ticket owner');
+      return next();
+    }
+    
+    console.log('Access denied: Not ticket owner or staff');
+    return res.status(403).json({
+      success: false,
+      message: 'You do not have permission to access this ticket'
+    });
+  } catch (error) {
+    console.error('Error in ensureTicketAccess:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'An error occurred while checking ticket access'
+    });
+  }
 };
 
 /**

@@ -1,0 +1,27 @@
+/* Message highlight animation for new messages */
+@keyframes highlight-fade {
+  0% {
+    background-color: rgba(59, 130, 246, 0.2);
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+
+.new-message-highlight {
+  animation: highlight-fade 1.5s ease-out;
+}
+
+/* Smooth transitions for messages */
+#messages-container > div {
+  transition: background-color 0.3s ease-out;
+}
+
+/* Fix for message bubbles */
+.flex-row-reverse .bg-blue-100 {
+  background-color: rgba(219, 234, 254, 1) !important; /* Force blue background for own messages */
+}
+
+.bg-gray-100:not(.flex-row-reverse *) {
+  background-color: rgba(243, 244, 246, 1) !important; /* Force gray background for others' messages */
+}

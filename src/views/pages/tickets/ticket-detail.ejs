@@ -92,8 +92,26 @@
     <div id="messages-container" class="flex flex-col gap-6 mb-8 max-h-[600px] overflow-y-auto">
       <% if (messages && messages.length > 0) { %>
         <% messages.forEach(message => { %>
-          <div class="flex <%= message.sender._id.toString() === user.id ? 'flex-row-reverse' : '' %> items-start gap-3">
-            <!-- Avatar -->
+          <% 
+            // Add debugging output for message IDs to browser console
+            console.log(`Message sender ID: ${message.sender._id}, Current user ID: ${user.id}`);
+            
+            // Fix message ownership comparison - ensure we're using string representation and proper comparison
+            const messageAuthorId = typeof message.sender._id === 'object' ? message.sender._id.toString() : String(message.sender._id);
+            const currentUserId = typeof user.id === 'object' ? user.id.toString() : String(user.id);
+            
+            // Remove any quotes that might be wrapped around the ID
+            const cleanSenderId = messageAuthorId.replace(/^"(.*)"$/, '$1').trim();
+            const cleanUserId = currentUserId.replace(/^"(.*)"$/, '$1').trim();
+            
+            // Final comparison to determine if the current user is the message author
+            const isOwnMessage = cleanSenderId === cleanUserId;
+          %>
+          <div class="flex <%= isOwnMessage ? 'flex-row-reverse' : '' %> items-start gap-3" 
+               data-message-id="<%= message._id %>"
+               data-sender-id="<%= cleanSenderId %>"
+               data-current-user-id="<%= cleanUserId %>"
+               data-is-own-message="<%= isOwnMessage %>">
             <div class="flex-shrink-0 w-8 h-8 rounded-full overflow-hidden bg-gray-100">
               <% if (message.sender.profileImage) { %>
                 <img src="<%= message.sender.profileImage %>" alt="Avatar" class="w-full h-full object-cover">
@@ -105,7 +123,7 @@
             </div>
             
             <!-- Message bubble -->
-            <div class="<%= message.sender._id.toString() === user.id ? 'bg-blue-100' : 'bg-gray-100' %> rounded-lg p-3 max-w-[80%]">
+            <div class="<%= isOwnMessage ? 'bg-blue-100' : 'bg-gray-100' %> rounded-lg p-3 max-w-[80%]">
               <!-- Sender info -->
               <div class="flex items-center mb-1">
                 <span class="text-xs font-medium text-gray-700">
@@ -184,13 +202,14 @@
   document.addEventListener('DOMContentLoaded', function() {
     console.log('Initializing ticket detail page...');
     console.log('User role:', '<%= user.role %>');
+    console.log('User ID:', '<%= user.id %>');
     console.log('Is employee flag:', <%= isEmployee %>);
     
     // Connect to Socket.IO server with more debug info
     const socket = io({
-      reconnectionAttempts: 5,
-      reconnectionDelay: 1000,
-      timeout: 10000,
+      reconnectionAttempts: 10,
+      reconnectionDelay: 500,
+      timeout: 20000,
       transports: ['websocket', 'polling'], // Try websocket first, then polling
       auth: {
         userId: '<%= user.id %>'
@@ -215,11 +234,6 @@
       // Join the ticket room - IMPORTANT for real-time updates
       console.log('Joining ticket room:', ticketId);
       socket.emit('join-ticket', ticketId);
-      
-      // Check if we're properly connected to the room
-      setTimeout(() => {
-        socket.emit('check-room', ticketId);
-      }, 1000);
     });
     
     // Check if we're in the room
@@ -234,8 +248,20 @@
         // Check if the message is already on the page to avoid duplication
         const existingMsg = document.querySelector(`[data-message-id="${data.message._id}"]`);
         if (!existingMsg) {
+          // Add message and scroll to bottom
           addMessageToUI(data.message);
           scrollToBottom();
+          
+          // Add a visual indicator for the new message (flash effect)
+          const messages = document.querySelectorAll('#messages-container > div');
+          if (messages.length > 0) {
+            const lastMessage = messages[messages.length - 1];
+            lastMessage.classList.add('new-message-highlight');
+            
+            setTimeout(() => {
+              lastMessage.classList.remove('new-message-highlight');
+            }, 1500);
+          }
         } else {
           console.log('Message already exists in UI, not adding duplicate');
         }
@@ -277,7 +303,7 @@
     // Handle ticket updates
     socket.on('ticket-updated', function(data) {
       console.log('Ticket update received:', data);
-      // Existing code for handling ticket updates...
+      // Handle ticket updates if needed
     });
     
     // Handle file input change
@@ -307,15 +333,17 @@
         
         // Don't submit empty messages
         if (!messageContent.trim() && !messageImage) {
+          if (window.showToast) {
+            window.showToast('Please enter a message or attach an image', 'warning');
+          }
           return;
         }
         
-        console.log('Sending message, content length:', messageContent.length);
+        console.log('Sending message, content length:', messageContent?.length || 0);
         console.log('Image attached:', messageImage ? 'yes' : 'no');
         
-        // Determine the appropriate endpoint based on user role
-        const endpoint = <%= isEmployee ? `'/admin/tickets/${ticket._id}/message'` : `'/tickets/${ticket._id}/message'` %>;
-        console.log('Using endpoint:', endpoint);
+        // IMPORTANT: Use the correct endpoint path for customers and employees
+        const endpoint = '/tickets/<%= ticket._id %>/message';
         
         // Disable submit button while sending
         const submitButton = this.querySelector('button[type="submit"]');
@@ -369,7 +397,7 @@
       console.error('Message form not found!');
     }
     
-    // Helper function to add a message to the UI
+    // Helper function to add a message to the UI - improved ID comparison
     function addMessageToUI(message) {
       const messagesContainer = document.getElementById('messages-container');
       if (!messagesContainer) {
@@ -377,42 +405,55 @@
         return;
       }
       
-      const userId = '<%= user.id %>';
-      console.log('Adding message to UI, comparing sender', message.sender._id, 'with current user', userId);
+      // CRITICAL FIX - Standardize ID handling
+      // Get both IDs as strings, ensure to handle object vs string representations
+      let senderId = typeof message.sender._id === 'object' 
+        ? message.sender._id.toString() 
+        : String(message.sender._id);
       
-      // Create message element
+      let userId = typeof '<%= user.id %>' === 'object'
+        ? '<%= user.id %>'.toString()
+        : String('<%= user.id %>');
+      
+      // Remove any wrapping quotes and trim whitespace
+      senderId = senderId.replace(/^"(.*)"$/, '$1').trim();
+      userId = userId.replace(/^"(.*)"$/, '$1').trim();
+      
+      console.log('Comparison for new message:');
+      console.log('- Sender ID:', senderId);
+      console.log('- User ID:', userId);
+      
+      // Check if the current user is the message sender
+      const isOwnMessage = senderId === userId;
+      console.log('- Is own message:', isOwnMessage);
+      
+      // Create message element with proper ownership
       const messageDiv = document.createElement('div');
-      messageDiv.className = `flex ${message.sender._id === userId ? 'flex-row-reverse' : ''} items-start gap-3`;
-      messageDiv.dataset.messageId = message._id; // Add this to identify messages
+      messageDiv.className = `flex ${isOwnMessage ? 'flex-row-reverse' : ''} items-start gap-3`;
+      messageDiv.dataset.messageId = message._id;
+      messageDiv.dataset.senderId = senderId;
+      messageDiv.dataset.currentUserId = userId;
+      messageDiv.dataset.isOwnMessage = isOwnMessage;
       
-      // Avatar
       const avatarHtml = message.sender.profileImage 
         ? `<img src="${message.sender.profileImage}" alt="Avatar" class="w-full h-full object-cover">`
         : `<div class="w-full h-full flex items-center justify-center text-sm font-medium text-gray-500">${message.sender.firstName.charAt(0).toUpperCase()}</div>`;
       
-      // Role badge
       let roleBadge = '';
       if (message.sender.role === 'admin') {
         roleBadge = '<span class="ml-2 inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">Admin</span>';
       } else if (message.sender.role === 'employee') {
         roleBadge = '<span class="ml-2 inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">Staff</span>';
+      } else if (message.sender.role === 'customer') {
+        roleBadge = '<span class="ml-2 inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">Customer</span>';
       }
       
-      // Message content
-      let contentHtml = '';
-      if (message.contentType === 'text') {
-        contentHtml = `<p class="text-gray-800 whitespace-pre-wrap">${escapeHtml(message.content)}</p>`;
-      } else if (message.contentType === 'image') {
-        contentHtml = `<div class="mt-2"><img src="${message.fileUrl}" alt="Uploaded image" class="max-w-full rounded-md max-h-64"></div>`;
-      }
-      
-      // Set the HTML
       messageDiv.innerHTML = `
         <div class="flex-shrink-0 w-8 h-8 rounded-full overflow-hidden bg-gray-100">
           ${avatarHtml}
         </div>
         
-        <div class="${message.sender._id === userId ? 'bg-blue-100' : 'bg-gray-100'} rounded-lg p-3 max-w-[80%]">
+        <div class="${isOwnMessage ? 'bg-blue-100' : 'bg-gray-100'} rounded-lg p-3 max-w-[80%]">
           <div class="flex items-center mb-1">
             <span class="text-xs font-medium text-gray-700">
               ${escapeHtml(message.sender.firstName)} ${escapeHtml(message.sender.lastName)}
@@ -423,13 +464,15 @@
             </span>
           </div>
           
-          ${contentHtml}
+          ${message.contentType === 'text' 
+            ? `<p class="text-gray-800 whitespace-pre-wrap">${escapeHtml(message.content)}</p>` 
+            : `<div class="mt-2"><img src="${message.fileUrl}" alt="Uploaded image" class="max-w-full rounded-md max-h-64"></div>`}
         </div>
       `;
       
-      // Add to container
       messagesContainer.appendChild(messageDiv);
-      console.log('Message added to UI');
+      console.log('Message added to UI, own message:', isOwnMessage);
+      scrollToBottom();
     }
     
     // Helper function to escape HTML to prevent XSS
@@ -449,19 +492,43 @@
     
     // Helper function to show error messages
     function showError(message) {
-      alert(message);
-    }
-    
-    // Scroll to the bottom of the messages container
-    function scrollToBottom() {
-      const messagesContainer = document.getElementById('messages-container');
-      if (messagesContainer) {
-        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+      if (window.showToast) {
+        window.showToast(message, 'error');
+      } else {
+        alert(message);
       }
     }
     
-    // Initial scroll to bottom
+    // Improved scroll to bottom function with smooth scrolling
+    function scrollToBottom() {
+      const messagesContainer = document.getElementById('messages-container');
+      if (messagesContainer) {
+        messagesContainer.scrollTo({
+          top: messagesContainer.scrollHeight,
+          behavior: 'smooth'
+        });
+      }
+    }
+    
+    // Scroll to bottom on initial load and whenever window resizes
     scrollToBottom();
+    window.addEventListener('resize', scrollToBottom);
+    
+    // Observe new messages being added to auto-scroll (for non-socket updates)
+    const messagesContainer = document.getElementById('messages-container');
+    if (messagesContainer) {
+      const observer = new MutationObserver(mutations => {
+        mutations.forEach(mutation => {
+          if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
+            scrollToBottom();
+          }
+        });
+      });
+      
+      observer.observe(messagesContainer, {
+        childList: true
+      });
+    }
     
     // Clean up when leaving the page
     window.addEventListener('beforeunload', function() {
