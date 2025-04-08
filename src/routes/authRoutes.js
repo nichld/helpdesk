@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const authController = require('../controllers/authController');
-const { ensureAuthenticated, redirectIfAuthenticated } = require('../middleware/auth');
+const { ensureAuthenticated, redirectIfAuthenticated, ensureAdmin } = require('../middleware/auth');
 
 // Public routes
 router.get('/login', redirectIfAuthenticated, authController.getLogin);
@@ -12,6 +12,10 @@ router.get('/logout', authController.logout);
 
 // Protected routes
 router.get('/profile', ensureAuthenticated, authController.profile);
-router.post('/profile/update', ensureAuthenticated, authController.updateProfile); // Fix undefined route handler
+router.post('/profile/update', ensureAuthenticated, authController.updateProfile);
+
+// Admin routes
+router.get('/users', ensureAuthenticated, ensureAdmin, authController.manageUsers);
+router.post('/users/update-role', ensureAuthenticated, ensureAdmin, authController.updateUserRole);
 
 module.exports = router;

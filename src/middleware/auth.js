@@ -50,7 +50,8 @@ exports.setCurrentUser = async (req, res, next) => {
         // Update session with the latest data
         req.session.user = {
           id: freshUser._id,
-          username: freshUser.username,
+          firstName: freshUser.firstName,
+          lastName: freshUser.lastName,
           email: freshUser.email,
           role: freshUser.role,
           profileImage: freshUser.profileImage || null,
@@ -63,6 +64,8 @@ exports.setCurrentUser = async (req, res, next) => {
         // Also add isAdmin and isAuthenticated convenience flags
         res.locals.isAuthenticated = true;
         res.locals.isAdmin = freshUser.role === 'admin';
+        res.locals.isEmployee = freshUser.role === 'employee';
+        res.locals.isCustomer = freshUser.role === 'customer';
       } else {
         // User no longer exists in database, clear session
         delete req.session.user;
@@ -73,6 +76,8 @@ exports.setCurrentUser = async (req, res, next) => {
       res.locals.user = req.session.user;
       res.locals.isAuthenticated = true;
       res.locals.isAdmin = req.session.user.role === 'admin';
+      res.locals.isEmployee = req.session.user.role === 'employee';
+      res.locals.isCustomer = req.session.user.role === 'customer';
     }
   }
   

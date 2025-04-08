@@ -1,12 +1,12 @@
 const authService = require('../services/authService');
-const User = require('../models/User'); // Add User model import
+const User = require('../models/User');
 
 /**
  * Renders login page
  */
 exports.getLogin = (req, res) => {
   res.render('auth/login', {
-    title: 'Login',  // Removed "- Drift Guides"
+    title: 'Login',
     error: null
   });
 };
@@ -16,7 +16,7 @@ exports.getLogin = (req, res) => {
  */
 exports.getRegister = (req, res) => {
   res.render('auth/register', {
-    title: 'Register',  // Removed "- Drift Guides"
+    title: 'Register',
     error: null
   });
 };
@@ -33,10 +33,11 @@ exports.login = async (req, res) => {
     if (result.success) {
       req.session.user = {
         id: result.user._id,
-        username: result.user.username,
+        firstName: result.user.firstName,
+        lastName: result.user.lastName,
         email: result.user.email,
         role: result.user.role,
-        profileImage: result.user.profileImage // Add profileImage to session
+        profileImage: result.user.profileImage
       };
       
       // Check if there's a return URL saved in the session
@@ -47,13 +48,13 @@ exports.login = async (req, res) => {
     }
     
     res.render('auth/login', {
-      title: 'Login - Drift Guides',
+      title: 'Login',
       error: result.message,
       email
     });
   } catch (error) {
     res.render('auth/login', {
-      title: 'Login - Drift Guides',
+      title: 'Login',
       error: 'An error occurred during login.',
       email: req.body.email
     });
@@ -65,16 +66,15 @@ exports.login = async (req, res) => {
  */
 exports.register = async (req, res) => {
   try {
-    const { username, email, password } = req.body;
+    const { firstName, lastName, email, password } = req.body;
     
-    // Removed password confirmation check since the field was removed
-    
-    const result = await authService.registerUser(username, email, password);
+    const result = await authService.registerUser(firstName, lastName, email, password);
     
     if (result.success) {
       req.session.user = {
         id: result.user._id,
-        username: result.user.username,
+        firstName: result.user.firstName,
+        lastName: result.user.lastName,
         email: result.user.email,
         role: result.user.role,
         profileImage: result.user.profileImage
@@ -83,16 +83,18 @@ exports.register = async (req, res) => {
     }
     
     res.render('auth/register', {
-      title: 'Register - Drift Guides',
+      title: 'Register',
       error: result.message,
-      username,
+      firstName,
+      lastName,
       email
     });
   } catch (error) {
     res.render('auth/register', {
-      title: 'Register - Drift Guides',
+      title: 'Register',
       error: 'An error occurred during registration.',
-      username: req.body.username,
+      firstName: req.body.firstName,
+      lastName: req.body.lastName,
       email: req.body.email
     });
   }
@@ -119,13 +121,13 @@ exports.profile = async (req, res) => {
     const user = await User.findById(req.session.user.id).select('-password');
     
     res.render('auth/profile', {
-      title: 'Your Profile',  // Removed "- Drift Guides"
+      title: 'Your Profile',
       user: user
     });
   } catch (error) {
     console.error('Error fetching user data:', error);
     res.render('auth/profile', {
-      title: 'Your Profile',  // Removed "- Drift Guides"
+      title: 'Your Profile',
       user: req.session.user,
       error: 'Failed to load complete profile data.'
     });
@@ -137,12 +139,12 @@ exports.profile = async (req, res) => {
  */
 exports.updateProfile = async (req, res) => {
   try {
-    const { username, email, profileImage, bio, currentPassword, newPassword, confirmPassword } = req.body;
+    const { firstName, lastName, email, profileImage, bio, currentPassword, newPassword, confirmPassword } = req.body;
     
     // Validate passwords match if changing password
     if (newPassword && newPassword !== confirmPassword) {
       return res.render('auth/profile', {
-        title: 'Your Profile',  // Removed "- Drift Guides"
+        title: 'Your Profile',
         user: await User.findById(req.session.user.id).select('-password'),
         error: 'New passwords do not match.'
       });
@@ -150,7 +152,7 @@ exports.updateProfile = async (req, res) => {
     
     const result = await authService.updateUserProfile(
       req.session.user.id, 
-      { username, email, profileImage, bio, newPassword },
+      { firstName, lastName, email, profileImage, bio, newPassword },
       currentPassword
     );
     
@@ -158,14 +160,15 @@ exports.updateProfile = async (req, res) => {
       // Update session with new user data including profile image
       req.session.user = {
         id: result.user._id,
-        username: result.user.username,
+        firstName: result.user.firstName,
+        lastName: result.user.lastName,
         email: result.user.email,
         role: result.user.role,
         profileImage: result.user.profileImage
       };
       
       return res.render('auth/profile', {
-        title: 'Your Profile',  // Removed "- Drift Guides"
+        title: 'Your Profile',
         user: result.user,
         success: 'Profile updated successfully.'
       });
@@ -174,7 +177,7 @@ exports.updateProfile = async (req, res) => {
     // If update failed
     const user = await User.findById(req.session.user.id).select('-password');
     res.render('auth/profile', {
-      title: 'Your Profile',  // Removed "- Drift Guides"
+      title: 'Your Profile',
       user: user,
       error: result.message
     });
@@ -183,9 +186,69 @@ exports.updateProfile = async (req, res) => {
     
     const user = await User.findById(req.session.user.id).select('-password');
     res.render('auth/profile', {
-      title: 'Your Profile',  // Removed "- Drift Guides"
+      title: 'Your Profile',
       user: user,
       error: 'An error occurred while updating your profile.'
+    });
+  }
+};
+
+/**
+ * Renders user management page for admins
+ */
+exports.manageUsers = async (req, res) => {
+  try {
+    const users = await User.find().select('-password').sort('lastName firstName');
+    
+    res.render('auth/users', {
+      title: 'User Management',
+      users: users
+    });
+  } catch (error) {
+    res.status(500).render('error', {
+      title: 'Error',
+      message: 'Failed to load users',
+      error: {
+        status: 500,
+        stack: process.env.NODE_ENV === 'production' ? '' : error.stack
+      }
+    });
+  }
+};
+
+/**
+ * Updates a user's role (admin only)
+ */
+exports.updateUserRole = async (req, res) => {
+  try {
+    const { userId, role } = req.body;
+    const currentUserId = req.session.user.id; // Get the current admin's ID
+    
+    if (!['customer', 'employee', 'admin'].includes(role)) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Invalid role specified' 
+      });
+    }
+    
+    const result = await authService.updateUserRole(userId, role, currentUserId);
+    
+    if (result.success) {
+      return res.status(200).json({ 
+        success: true, 
+        user: result.user 
+      });
+    } else {
+      return res.status(400).json({ 
+        success: false, 
+        message: result.message 
+      });
+    }
+  } catch (error) {
+    console.error('Error updating user role:', error);
+    return res.status(500).json({ 
+      success: false, 
+      message: 'An error occurred while updating user role' 
     });
   }
 };

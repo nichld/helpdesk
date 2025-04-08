@@ -2,12 +2,17 @@ const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 
 const UserSchema = new mongoose.Schema({
-  username: {
+  firstName: {
     type: String,
-    required: [true, 'Username is required'],
+    required: [true, 'First name is required'],
     trim: true,
-    unique: true,
-    minlength: [3, 'Username must be at least 3 characters long']
+    minlength: [2, 'First name must be at least 2 characters long']
+  },
+  lastName: {
+    type: String,
+    required: [true, 'Last name is required'],
+    trim: true,
+    minlength: [2, 'Last name must be at least 2 characters long']
   },
   email: {
     type: String,
@@ -24,8 +29,8 @@ const UserSchema = new mongoose.Schema({
   },
   role: {
     type: String,
-    enum: ['user', 'admin'],
-    default: 'user'
+    enum: ['customer', 'employee', 'admin'],
+    default: 'customer'
   },
   profileImage: {
     type: String,
@@ -40,6 +45,15 @@ const UserSchema = new mongoose.Schema({
     default: Date.now
   }
 });
+
+// Add a virtual property for full name
+UserSchema.virtual('fullName').get(function() {
+  return `${this.firstName} ${this.lastName}`;
+});
+
+// Ensure virtuals are included in JSON output
+UserSchema.set('toJSON', { virtuals: true });
+UserSchema.set('toObject', { virtuals: true });
 
 // Hash password before saving
 UserSchema.pre('save', async function(next) {

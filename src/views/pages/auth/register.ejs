@@ -8,17 +8,32 @@
   <% } %>
   
   <form action="/register" method="POST" class="flex flex-col gap-4">
-    <div class="flex flex-col gap-1">
-      <label for="username" class="text-sm font-medium text-gray-700">Username</label>
-      <input 
-        type="text" 
-        id="username" 
-        name="username"
-        value="<%= typeof username !== 'undefined' ? username : '' %>"
-        required 
-        minlength="3"
-        class="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-      >
+    <div class="flex flex-col md:flex-row gap-4">
+      <div class="flex flex-col gap-1 flex-1">
+        <label for="firstName" class="text-sm font-medium text-gray-700">First Name</label>
+        <input 
+          type="text" 
+          id="firstName" 
+          name="firstName"
+          value="<%= typeof firstName !== 'undefined' ? firstName : '' %>"
+          required 
+          minlength="2"
+          class="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+      </div>
+      
+      <div class="flex flex-col gap-1 flex-1">
+        <label for="lastName" class="text-sm font-medium text-gray-700">Last Name</label>
+        <input 
+          type="text" 
+          id="lastName" 
+          name="lastName"
+          value="<%= typeof lastName !== 'undefined' ? lastName : '' %>"
+          required 
+          minlength="2"
+          class="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+      </div>
     </div>
     
     <div class="flex flex-col gap-1">
