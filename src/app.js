@@ -22,6 +22,7 @@ app.use(configureSession());
 // Apply the attachUser middleware AFTER session middleware but BEFORE routes
 app.use(setCurrentUser);
 
+// Use the router which includes all routes and error handling
 app.use("/", router);
 
 startServer(app);

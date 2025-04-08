@@ -15,8 +15,12 @@ const config = {
   
   // Authentication
   SESSION_SECRET: process.env.SESSION_SECRET || 'ejs-template-secret-key',
-  ADMIN_EMAIL: process.env.ADMIN_EMAIL || 'admin@example.com',
-  ADMIN_PASSWORD: process.env.ADMIN_PASSWORD || 'changeme',
+  
+  // Default User Configuration
+  DEFAULT_DOMAIN: process.env.DEFAULT_DOMAIN || 'example.com',
+  DEFAULT_PASSWORD: process.env.DEFAULT_PASSWORD || 'changeme',
+  DEFAULT_FIRST_NAME: 'Nichlas',
+  DEFAULT_LAST_NAME: 'Loe-Dahl',
   
   // Environment
   NODE_ENV: process.env.NODE_ENV || 'development',

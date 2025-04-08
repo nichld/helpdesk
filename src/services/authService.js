@@ -82,33 +82,42 @@ exports.registerUser = async (firstName, lastName, email, password) => {
 };
 
 /**
- * Creates an admin user if none exists
+ * Creates default users if they don't exist (admin, employee, customer)
  * @returns {Promise<void>}
  */
 exports.createAdminIfNotExists = async () => {
   try {
     // Check if mongoose is connected
     if (mongoose.connection.readyState !== 1) {
-      console.log('MongoDB not connected yet, waiting to create admin...');
+      console.log('MongoDB not connected yet, waiting to create default users...');
       return;
     }
 
-    // Check if any admin user exists
-    const adminExists = await User.findOne({ role: 'admin' });
+    const defaultFirstName = config.DEFAULT_FIRST_NAME;
+    const defaultLastName = config.DEFAULT_LAST_NAME;
+    const defaultDomain = config.DEFAULT_DOMAIN;
+    const defaultPassword = config.DEFAULT_PASSWORD;
+
+    // Check for each role type and create if it doesn't exist
+    const roles = ['admin', 'employee', 'customer'];
     
-    if (!adminExists) {
-      // Create a default admin user
-      await User.create({
-        firstName: 'Admin',
-        lastName: 'User',
-        email: config.ADMIN_EMAIL,
-        password: config.ADMIN_PASSWORD,
-        role: 'admin'
-      });
-      console.log('Default admin user created');
+    for (const role of roles) {
+      const userExists = await User.findOne({ role });
+      
+      if (!userExists) {
+        // Create a default user for this role
+        await User.create({
+          firstName: defaultFirstName,
+          lastName: defaultLastName,
+          email: `${role}@${defaultDomain}`,
+          password: defaultPassword,
+          role: role
+        });
+        console.log(`Default ${role} user created: ${defaultFirstName} ${defaultLastName} (${role}@${defaultDomain})`);
+      }
     }
   } catch (error) {
-    console.error('Error creating admin user:', error);
+    console.error('Error creating default users:', error);
   }
 };
 
