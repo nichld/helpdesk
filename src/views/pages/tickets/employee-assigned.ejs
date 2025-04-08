@@ -1,0 +1,124 @@
+<div class="bg-white rounded-lg shadow p-6">
+  <div class="flex justify-between items-center mb-6">
+    <h1 class="text-2xl font-bold text-gray-900">My Assigned Tickets</h1>
+    <div class="space-x-4">
+      <a href="/admin/dashboard" class="text-blue-600 hover:text-blue-800 text-sm">
+        Dashboard
+      </a>
+      <a href="/admin/tickets" class="text-blue-600 hover:text-blue-800 text-sm">
+        All Tickets
+      </a>
+    </div>
+  </div>
+
+  <% if (typeof error !== 'undefined' && error) { %>
+    <div class="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-md text-sm mb-6">
+      <%= error %>
+    </div>
+  <% } %>
+
+  <!-- Filter options -->
+  <div class="mb-6">
+    <div class="flex items-center mb-2">
+      <span class="text-sm font-medium text-gray-700 mr-2">Filter by status:</span>
+      <div class="flex space-x-2">
+        <a href="/admin/tickets/assigned" class="px-3 py-1 text-sm rounded-full <%= filter === 'all' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-600 hover:bg-gray-200' %>">
+          All
+        </a>
+        <a href="/admin/tickets/assigned?status=open" class="px-3 py-1 text-sm rounded-full <%= filter === 'open' ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-600 hover:bg-gray-200' %>">
+          Open
+        </a>
+        <a href="/admin/tickets/assigned?status=in-progress" class="px-3 py-1 text-sm rounded-full <%= filter === 'in-progress' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-600 hover:bg-gray-200' %>">
+          In Progress
+        </a>
+        <a href="/admin/tickets/assigned?status=solved" class="px-3 py-1 text-sm rounded-full <%= filter === 'solved' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600 hover:bg-gray-200' %>">
+          Solved
+        </a>
+        <a href="/admin/tickets/assigned?status=closed" class="px-3 py-1 text-sm rounded-full <%= filter === 'closed' ? 'bg-gray-800 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200' %>">
+          Closed
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tickets table -->
+  <div class="overflow-x-auto">
+    <table class="min-w-full bg-white border border-gray-200 divide-y divide-gray-200">
+      <thead class="bg-gray-50">
+        <tr>
+          <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Title</th>
+          <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer</th>
+          <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
+          <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+          <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Priority</th>
+          <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last Activity</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-200">
+        <% if (tickets && tickets.length > 0) { %>
+          <% tickets.forEach(ticket => { %>
+            <tr class="hover:bg-gray-50 cursor-pointer" onclick="window.location.href='/admin/tickets/<%= ticket._id %>'">
+              <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900"><%= ticket.title %></td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                <%= ticket.customer.firstName %> <%= ticket.customer.lastName %>
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><%= ticket.category %></td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm">
+                <% if (ticket.status === 'open') { %>
+                  <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                    Open
+                  </span>
+                <% } else if (ticket.status === 'in-progress') { %>
+                  <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                    In Progress
+                  </span>
+                <% } else if (ticket.status === 'solved') { %>
+                  <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                    Solved
+                  </span>
+                <% } else if (ticket.status === 'closed') { %>
+                  <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-800 text-white">
+                    Closed
+                  </span>
+                <% } %>
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm">
+                <% if (!ticket.priority) { %>
+                  <span class="text-gray-500">N/A</span>
+                <% } else if (ticket.priority === 'low') { %>
+                  <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                    Low
+                  </span>
+                <% } else if (ticket.priority === 'medium') { %>
+                  <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                    Medium
+                  </span>
+                <% } else if (ticket.priority === 'high') { %>
+                  <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-orange-100 text-orange-800">
+                    High
+                  </span>
+                <% } else if (ticket.priority === 'critical') { %>
+                  <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+                    Critical
+                  </span>
+                <% } %>
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                <%= new Date(ticket.lastActivity).toLocaleString() %>
+              </td>
+            </tr>
+          <% }); %>
+        <% } else { %>
+          <tr>
+            <td colspan="6" class="px-6 py-4 text-center text-sm text-gray-500">
+              <div class="py-8">
+                <p class="mb-2">You don't have any assigned tickets<%= filter !== 'all' ? ' with this status' : '' %>.</p>
+                <a href="/admin/tickets" class="text-blue-600 hover:underline">View all tickets</a>
+              </div>
+            </td>
+          </tr>
+        <% } %>
+      </tbody>
+    </table>
+  </div>
+</div>

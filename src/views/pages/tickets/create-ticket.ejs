@@ -1,0 +1,73 @@
+<div class="flex flex-col gap-6 max-w-2xl mx-auto">
+  <h1 class="text-2xl font-bold text-gray-900">Create New Support Ticket</h1>
+  
+  <% if (typeof error !== 'undefined' && error) { %>
+    <div class="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-md text-sm mb-4">
+      <%= error %>
+    </div>
+  <% } %>
+  
+  <div class="bg-white border border-gray-200 rounded-lg p-6">
+    <form action="/tickets/create" method="POST" class="space-y-6">
+      <div>
+        <label for="title" class="block text-sm font-medium text-gray-700">Title</label>
+        <p class="text-xs text-gray-500 mb-1">Briefly describe your issue (min 5 characters)</p>
+        <input 
+          type="text" 
+          id="title" 
+          name="title" 
+          class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          required
+          minlength="5"
+          maxlength="100"
+          value="<%= typeof form !== 'undefined' && form.title ? form.title : '' %>"
+        >
+      </div>
+      
+      <div>
+        <label for="category" class="block text-sm font-medium text-gray-700">Category</label>
+        <select 
+          id="category" 
+          name="category" 
+          class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          required
+        >
+          <option value="" disabled <%= typeof form === 'undefined' || !form.category ? 'selected' : '' %>>Select a category</option>
+          <option value="Technical Issue" <%= typeof form !== 'undefined' && form.category === 'Technical Issue' ? 'selected' : '' %>>Technical Issue</option>
+          <option value="Billing" <%= typeof form !== 'undefined' && form.category === 'Billing' ? 'selected' : '' %>>Billing</option>
+          <option value="Account" <%= typeof form !== 'undefined' && form.category === 'Account' ? 'selected' : '' %>>Account</option>
+          <option value="Feature Request" <%= typeof form !== 'undefined' && form.category === 'Feature Request' ? 'selected' : '' %>>Feature Request</option>
+          <option value="Other" <%= typeof form !== 'undefined' && form.category === 'Other' ? 'selected' : '' %>>Other</option>
+        </select>
+      </div>
+      
+      <div>
+        <label for="description" class="block text-sm font-medium text-gray-700">Description</label>
+        <p class="text-xs text-gray-500 mb-1">Please provide detailed information about your issue (min 10 characters)</p>
+        <textarea 
+          id="description" 
+          name="description" 
+          rows="6" 
+          class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          required
+          minlength="10"
+        ><%= typeof form !== 'undefined' && form.description ? form.description : '' %></textarea>
+      </div>
+      
+      <div class="flex justify-between items-center pt-4">
+        <a 
+          href="/tickets" 
+          class="px-4 py-2 border border-gray-300 rounded-md text-sm text-gray-700 hover:bg-gray-50"
+        >
+          Cancel
+        </a>
+        <button 
+          type="submit" 
+          class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-sm font-medium"
+        >
+          Create Ticket
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

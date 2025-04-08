@@ -7,7 +7,7 @@ const createDirectories = () => {
   const dirs = [
     path.join(__dirname, '../../uploads'),
     path.join(__dirname, '../../uploads/profiles'),
-    path.join(__dirname, '../../uploads/messages')
+    path.join(__dirname, '../../uploads/tickets')
   ];
   
   dirs.forEach(dir => {
@@ -29,8 +29,8 @@ const storage = multer.diskStorage({
     
     if (req.route.path.includes('profile')) {
       uploadPath = path.join(uploadPath, 'profiles');
-    } else if (req.route.path.includes('message')) {
-      uploadPath = path.join(uploadPath, 'messages');
+    } else if (req.route.path.includes('ticket') || req.route.path.includes('message')) {
+      uploadPath = path.join(uploadPath, 'tickets');
     }
     
     cb(null, uploadPath);
@@ -61,7 +61,7 @@ const profileUpload = multer({
   }
 });
 
-const messageUpload = multer({
+const ticketUpload = multer({
   storage: storage,
   fileFilter: fileFilter,
   limits: {
@@ -71,5 +71,5 @@ const messageUpload = multer({
 
 module.exports = {
   profileUpload,
-  messageUpload
+  ticketUpload
 };

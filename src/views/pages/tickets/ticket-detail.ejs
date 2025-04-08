@@ -1,0 +1,397 @@
+<div class="flex flex-col gap-6">
+  <!-- Back button -->
+  <div>
+    <a href="/tickets" class="inline-flex items-center text-sm text-blue-600 hover:text-blue-800">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+      </svg>
+      Back to tickets
+    </a>
+  </div>
+  
+  <!-- Ticket header -->
+  <div class="bg-white border border-gray-200 rounded-lg p-6">
+    <div class="flex flex-col md:flex-row md:justify-between md:items-start gap-4">
+      <div>
+        <div class="flex items-center gap-3 mb-2">
+          <h1 class="text-2xl font-bold text-gray-900"><%= ticket.title %></h1>
+          
+          <% if (ticket.status === 'open') { %>
+            <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
+              Open
+            </span>
+          <% } else if (ticket.status === 'in-progress') { %>
+            <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+              In Progress
+            </span>
+          <% } else if (ticket.status === 'solved') { %>
+            <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+              Solved
+            </span>
+          <% } else if (ticket.status === 'closed') { %>
+            <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-800 text-white">
+              Closed
+            </span>
+          <% } %>
+        </div>
+        
+        <p class="text-gray-600 mb-4"><%= ticket.description %></p>
+        
+        <div class="grid grid-cols-2 sm:grid-cols-3 gap-y-4 gap-x-8">
+          <div>
+            <p class="text-xs text-gray-500">Category</p>
+            <p class="font-medium"><%= ticket.category %></p>
+          </div>
+          
+          <div>
+            <p class="text-xs text-gray-500">Priority</p>
+            <p class="font-medium">
+              <% if (!ticket.priority) { %>
+                N/A
+              <% } else if (ticket.priority === 'low') { %>
+                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">Low</span>
+              <% } else if (ticket.priority === 'medium') { %>
+                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800">Medium</span>
+              <% } else if (ticket.priority === 'high') { %>
+                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-orange-100 text-orange-800">High</span>
+              <% } else if (ticket.priority === 'critical') { %>
+                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800">Critical</span>
+              <% } %>
+            </p>
+          </div>
+          
+          <div>
+            <p class="text-xs text-gray-500">Assigned To</p>
+            <p class="font-medium">
+              <% if (ticket.assignedTo) { %>
+                <%= ticket.assignedTo.firstName %> <%= ticket.assignedTo.lastName %>
+              <% } else { %>
+                N/A
+              <% } %>
+            </p>
+          </div>
+          
+          <div>
+            <p class="text-xs text-gray-500">Created</p>
+            <p class="font-medium"><%= new Date(ticket.createdAt).toLocaleDateString() %></p>
+          </div>
+          
+          <div>
+            <p class="text-xs text-gray-500">Last Activity</p>
+            <p class="font-medium"><%= new Date(ticket.lastActivity).toLocaleString() %></p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Messages container -->
+  <div class="bg-white border border-gray-200 rounded-lg p-6 flex flex-col">
+    <h2 class="text-xl font-semibold mb-6">Messages</h2>
+    
+    <div id="messages-container" class="flex flex-col gap-6 mb-8 max-h-[600px] overflow-y-auto">
+      <% if (messages && messages.length > 0) { %>
+        <% messages.forEach(message => { %>
+          <div class="flex <%= message.sender._id.toString() === user.id ? 'flex-row-reverse' : '' %> items-start gap-3">
+            <!-- Avatar -->
+            <div class="flex-shrink-0 w-8 h-8 rounded-full overflow-hidden bg-gray-100">
+              <% if (message.sender.profileImage) { %>
+                <img src="<%= message.sender.profileImage %>" alt="Avatar" class="w-full h-full object-cover">
+              <% } else { %>
+                <div class="w-full h-full flex items-center justify-center text-sm font-medium text-gray-500">
+                  <%= message.sender.firstName.charAt(0).toUpperCase() %>
+                </div>
+              <% } %>
+            </div>
+            
+            <!-- Message bubble -->
+            <div class="<%= message.sender._id.toString() === user.id ? 'bg-blue-100' : 'bg-gray-100' %> rounded-lg p-3 max-w-[80%]">
+              <!-- Sender info -->
+              <div class="flex items-center mb-1">
+                <span class="text-xs font-medium text-gray-700">
+                  <%= message.sender.firstName %> <%= message.sender.lastName %>
+                </span>
+                <% if (message.sender.role === 'admin') { %>
+                  <span class="ml-2 inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">Admin</span>
+                <% } else if (message.sender.role === 'employee') { %>
+                  <span class="ml-2 inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">Staff</span>
+                <% } %>
+                <span class="ml-2 text-xs text-gray-500">
+                  <%= new Date(message.createdAt).toLocaleString() %>
+                </span>
+              </div>
+              
+              <% if (message.contentType === 'text') { %>
+                <!-- Text content -->
+                <p class="text-gray-800 whitespace-pre-wrap"><%= message.content %></p>
+              <% } else if (message.contentType === 'image') { %>
+                <!-- Image content -->
+                <div class="mt-2">
+                  <img src="<%= message.fileUrl %>" alt="Uploaded image" class="max-w-full rounded-md max-h-64">
+                </div>
+              <% } %>
+            </div>
+          </div>
+        <% }); %>
+      <% } else { %>
+        <div class="text-center py-6 text-gray-500">
+          No messages yet. Start the conversation below.
+        </div>
+      <% } %>
+    </div>
+    
+    <!-- Message input area -->
+    <% if (ticket.status !== 'closed') { %>
+      <div id="message-form" class="mt-auto border-t pt-4">
+        <form id="ticket-message-form" class="flex flex-col gap-2">
+          <textarea 
+            id="message-content" 
+            name="content" 
+            rows="3" 
+            placeholder="Type your message here..." 
+            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            required
+          ></textarea>
+          
+          <div class="flex justify-between items-center">
+            <div class="flex items-center">
+              <label for="message-image" class="cursor-pointer bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1 rounded-md text-sm flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                Attach Image
+              </label>
+              <input type="file" id="message-image" name="image" class="hidden" accept="image/*">
+              <span id="file-name" class="ml-2 text-sm text-gray-500"></span>
+            </div>
+            
+            <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium">
+              Send Message
+            </button>
+          </div>
+        </form>
+      </div>
+    <% } else { %>
+      <div class="mt-4 bg-gray-50 p-4 border border-gray-200 rounded-md">
+        <p class="text-center text-gray-600">This ticket is closed. No new messages can be added.</p>
+      </div>
+    <% } %>
+  </div>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Connect to Socket.IO server
+    const socket = io({
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000
+    });
+
+    const ticketId = '<%= ticket._id %>';
+    let socketConnected = false;
+    
+    // Socket connection events
+    socket.on('connect', function() {
+      console.log('Socket connected!');
+      socketConnected = true;
+      
+      // Join the ticket room
+      socket.emit('join-ticket', ticketId);
+    });
+    
+    socket.on('connect_error', function(err) {
+      console.error('Socket connection error:', err);
+      socketConnected = false;
+    });
+    
+    socket.on('disconnect', function() {
+      console.log('Socket disconnected');
+      socketConnected = false;
+    });
+    
+    // Handle new messages from server
+    socket.on('new-message', function(data) {
+      console.log('New message received:', data);
+      if (data && data.message) {
+        addMessageToUI(data.message);
+        scrollToBottom();
+      }
+    });
+    
+    // Handle file input change
+    const fileInput = document.getElementById('message-image');
+    const fileNameDisplay = document.getElementById('file-name');
+    
+    if (fileInput) {
+      fileInput.addEventListener('change', function() {
+        if (this.files.length > 0) {
+          fileNameDisplay.textContent = this.files[0].name;
+        } else {
+          fileNameDisplay.textContent = '';
+        }
+      });
+    }
+    
+    // Handle form submission
+    const messageForm = document.getElementById('ticket-message-form');
+    
+    if (messageForm) {
+      messageForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(this);
+        const messageContent = document.getElementById('message-content').value;
+        const messageImage = document.getElementById('message-image').files[0];
+        
+        // Don't submit empty messages
+        if (!messageContent.trim() && !messageImage) {
+          return;
+        }
+        
+        // Disable submit button while sending
+        const submitButton = this.querySelector('button[type="submit"]');
+        submitButton.disabled = true;
+        submitButton.innerHTML = 'Sending...';
+        
+        // Determine the appropriate endpoint based on user role
+        const endpoint = <%= isEmployee ? `'/admin/tickets/${ticket._id}/message'` : `'/tickets/${ticket._id}/message'` %>;
+        
+        // Send message to server
+        fetch(endpoint, {
+          method: 'POST',
+          body: formData
+        })
+        .then(response => {
+          if (!response.ok) {
+            throw new Error(`Server responded with status: ${response.status}`);
+          }
+          return response.json();
+        })
+        .then(data => {
+          // Re-enable button
+          submitButton.disabled = false;
+          submitButton.innerHTML = 'Send Message';
+          
+          if (data.success) {
+            // Clear the form
+            document.getElementById('message-content').value = '';
+            document.getElementById('message-image').value = '';
+            fileNameDisplay.textContent = '';
+            
+            // If socket not connected, manually add message to UI
+            if (!socketConnected && data.message) {
+              addMessageToUI(data.message);
+              scrollToBottom();
+            }
+          } else {
+            showError('Error sending message: ' + data.message);
+          }
+        })
+        .catch(error => {
+          // Re-enable button
+          submitButton.disabled = false;
+          submitButton.innerHTML = 'Send Message';
+          
+          console.error('Error:', error);
+          showError('An error occurred while sending the message');
+        });
+      });
+    }
+    
+    // Helper function to add a message to the UI
+    function addMessageToUI(message) {
+      const messagesContainer = document.getElementById('messages-container');
+      if (!messagesContainer) return;
+      
+      const userId = '<%= user.id %>';
+      
+      // Create message element
+      const messageDiv = document.createElement('div');
+      messageDiv.className = `flex ${message.sender._id === userId ? 'flex-row-reverse' : ''} items-start gap-3`;
+      
+      // Avatar
+      const avatarHtml = message.sender.profileImage 
+        ? `<img src="${message.sender.profileImage}" alt="Avatar" class="w-full h-full object-cover">`
+        : `<div class="w-full h-full flex items-center justify-center text-sm font-medium text-gray-500">${message.sender.firstName.charAt(0).toUpperCase()}</div>`;
+      
+      // Role badge
+      let roleBadge = '';
+      if (message.sender.role === 'admin') {
+        roleBadge = '<span class="ml-2 inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">Admin</span>';
+      } else if (message.sender.role === 'employee') {
+        roleBadge = '<span class="ml-2 inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">Staff</span>';
+      }
+      
+      // Message content
+      let contentHtml = '';
+      if (message.contentType === 'text') {
+        contentHtml = `<p class="text-gray-800 whitespace-pre-wrap">${escapeHtml(message.content)}</p>`;
+      } else if (message.contentType === 'image') {
+        contentHtml = `<div class="mt-2"><img src="${message.fileUrl}" alt="Uploaded image" class="max-w-full rounded-md max-h-64"></div>`;
+      }
+      
+      // Set the HTML
+      messageDiv.innerHTML = `
+        <div class="flex-shrink-0 w-8 h-8 rounded-full overflow-hidden bg-gray-100">
+          ${avatarHtml}
+        </div>
+        
+        <div class="${message.sender._id === userId ? 'bg-blue-100' : 'bg-gray-100'} rounded-lg p-3 max-w-[80%]">
+          <div class="flex items-center mb-1">
+            <span class="text-xs font-medium text-gray-700">
+              ${escapeHtml(message.sender.firstName)} ${escapeHtml(message.sender.lastName)}
+            </span>
+            ${roleBadge}
+            <span class="ml-2 text-xs text-gray-500">
+              ${new Date(message.createdAt).toLocaleString()}
+            </span>
+          </div>
+          
+          ${contentHtml}
+        </div>
+      `;
+      
+      // Add to container
+      messagesContainer.appendChild(messageDiv);
+    }
+    
+    // Helper function to escape HTML to prevent XSS
+    function escapeHtml(text) {
+      if (!text) return '';
+      
+      const map = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#039;'
+      };
+      
+      return text.replace(/[&<>"']/g, function(m) { return map[m]; });
+    }
+    
+    // Helper function to show error messages
+    function showError(message) {
+      alert(message);
+    }
+    
+    // Scroll to the bottom of the messages container
+    function scrollToBottom() {
+      const messagesContainer = document.getElementById('messages-container');
+      if (messagesContainer) {
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+      }
+    }
+    
+    // Initial scroll to bottom
+    scrollToBottom();
+    
+    // Clean up when leaving the page
+    window.addEventListener('beforeunload', function() {
+      if (socketConnected) {
+        socket.emit('leave-ticket', ticketId);
+      }
+    });
+  });
+</script>
