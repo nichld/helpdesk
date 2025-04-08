@@ -1,16 +1,25 @@
-<div class="flex flex-col gap-6">
+<div class="ticket-container">
   <!-- Back button -->
-  <div>
-    <a href="/admin/tickets" class="inline-flex items-center text-sm text-blue-600 hover:text-blue-800">
-      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-      </svg>
-      Back to all tickets
-    </a>
+  <div class="ticket-header mb-2">
+    <div class="flex justify-between items-center">
+      <a href="/admin/tickets" class="inline-flex items-center text-sm text-blue-600 hover:text-blue-800">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+        </svg>
+        Back to tickets
+      </a>
+      
+      <button id="toggle-metadata-btn" class="toggle-metadata-btn">
+        Ticket Details
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 ml-1" viewBox="0 0 20 20" fill="currentColor">
+          <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+        </svg>
+      </button>
+    </div>
   </div>
   
-  <!-- Ticket header -->
-  <div class="bg-white border border-gray-200 rounded-lg p-6">
+  <!-- Ticket metadata section (collapsible) -->
+  <div id="ticket-metadata" class="ticket-metadata bg-white border border-gray-200 rounded-lg p-6 mb-4">
     <div class="flex flex-col md:flex-row md:justify-between md:items-start gap-4">
       <div>
         <div class="flex items-center gap-3 mb-2">
@@ -87,461 +96,129 @@
           </div>
         </div>
       </div>
-      
-      <!-- Admin actions -->
-      <div class="w-full md:w-80 bg-gray-50 p-4 rounded-lg border border-gray-200">
-        <h3 class="font-medium text-gray-700 mb-3">Ticket Actions</h3>
-        
-        <form id="ticket-actions-form" class="space-y-4">
-          <div>
-            <label for="status" class="block text-sm font-medium text-gray-700">Status</label>
-            <select 
-              id="status" 
-              name="status" 
-              class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
-            >
-              <option value="open" <%= ticket.status === 'open' ? 'selected' : '' %>>Open</option>
-              <option value="in-progress" <%= ticket.status === 'in-progress' ? 'selected' : '' %>>In Progress</option>
-              <option value="solved" <%= ticket.status === 'solved' ? 'selected' : '' %>>Solved</option>
-              <option value="closed" <%= ticket.status === 'closed' ? 'selected' : '' %>>Closed</option>
-            </select>
-          </div>
-          
-          <div>
-            <label for="priority" class="block text-sm font-medium text-gray-700">Priority</label>
-            <select 
-              id="priority" 
-              name="priority" 
-              class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
-            >
-              <option value="" <%= !ticket.priority ? 'selected' : '' %>>Not Set</option>
-              <option value="low" <%= ticket.priority === 'low' ? 'selected' : '' %>>Low</option>
-              <option value="medium" <%= ticket.priority === 'medium' ? 'selected' : '' %>>Medium</option>
-              <option value="high" <%= ticket.priority === 'high' ? 'selected' : '' %>>High</option>
-              <option value="critical" <%= ticket.priority === 'critical' ? 'selected' : '' %>>Critical</option>
-            </select>
-          </div>
-          
-          <div>
-            <label for="category" class="block text-sm font-medium text-gray-700">Category</label>
-            <select 
-              id="category" 
-              name="category" 
-              class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
-            >
-              <option value="Technical Issue" <%= ticket.category === 'Technical Issue' ? 'selected' : '' %>>Technical Issue</option>
-              <option value="Billing" <%= ticket.category === 'Billing' ? 'selected' : '' %>>Billing</option>
-              <option value="Account" <%= ticket.category === 'Account' ? 'selected' : '' %>>Account</option>
-              <option value="Feature Request" <%= ticket.category === 'Feature Request' ? 'selected' : '' %>>Feature Request</option>
-              <option value="Other" <%= ticket.category === 'Other' ? 'selected' : '' %>>Other</option>
-            </select>
-          </div>
-          
-          <div>
-            <label for="assignment" class="block text-sm font-medium text-gray-700">Assignment</label>
-            <div class="mt-1 flex space-x-2">
-              <button 
-                type="button" 
-                onclick="assignTo('me')" 
-                class="flex-1 py-2 px-3 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
-              >
-                Assign to Me
-              </button>
-              <button 
-                type="button" 
-                onclick="assignTo('none')" 
-                class="flex-1 py-2 px-3 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
-              >
-                Unassign
-              </button>
-            </div>
-          </div>
-          
-          <div>
-            <button 
-              type="button" 
-              id="save-changes-btn" 
-              class="w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-            >
-              Save Changes
-            </button>
-          </div>
-        </form>
-        
-        <div id="save-status" class="mt-3 text-sm"></div>
-      </div>
     </div>
   </div>
   
-  <!-- Messages container -->
-  <div class="bg-white border border-gray-200 rounded-lg p-6 flex flex-col">
-    <h2 class="text-xl font-semibold mb-6">Messages</h2>
+  <!-- Messages section - preview only -->
+  <div class="bg-white border border-gray-200 rounded-lg p-6">
+    <div class="flex justify-between items-center mb-4">
+      <h2 class="text-xl font-semibold">Messages</h2>
+      
+      <a href="/admin/tickets/<%= ticket._id %>/messages" 
+         class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium flex items-center"
+         target="_blank">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
+          <path fill-rule="evenodd" d="M18 10c0 3.866-3.582 7-8 7a8.841 8.841 0 01-4.083-.98L2 17l1.338-3.123C2.493 12.767 2 11.434 2 10c0-3.866 3.582-7 8-7s8 3.134 8 7zM7 9H5v2h2V9zm8 0h-2v2h2V9zM9 9h2v2H9V9z" clip-rule="evenodd" />
+        </svg>
+        View Messages
+      </a>
+    </div>
     
-    <div id="messages-container" class="flex flex-col gap-6 mb-8 max-h-[600px] overflow-y-auto">
+    <div class="border rounded-lg p-4 bg-gray-50">
       <% if (messages && messages.length > 0) { %>
-        <% messages.forEach(message => { %>
-          <div class="flex <%= message.sender._id.toString() === user.id ? 'flex-row-reverse' : '' %> items-start gap-3">
-            <!-- Avatar -->
-            <div class="flex-shrink-0 w-8 h-8 rounded-full overflow-hidden bg-gray-100">
-              <% if (message.sender.profileImage) { %>
-                <img src="<%= message.sender.profileImage %>" alt="Avatar" class="w-full h-full object-cover">
-              <% } else { %>
-                <div class="w-full h-full flex items-center justify-center text-sm font-medium text-gray-500">
-                  <%= message.sender.firstName.charAt(0).toUpperCase() %>
-                </div>
-              <% } %>
-            </div>
-            
-            <!-- Message bubble -->
-            <div class="<%= message.sender._id.toString() === user.id ? 'bg-blue-100' : 'bg-gray-100' %> rounded-lg p-3 max-w-[80%]">
-              <!-- Sender info -->
-              <div class="flex items-center mb-1">
-                <span class="text-xs font-medium text-gray-700">
-                  <%= message.sender.firstName %> <%= message.sender.lastName %>
-                </span>
-                <% if (message.sender.role === 'admin') { %>
-                  <span class="ml-2 inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">Admin</span>
-                <% } else if (message.sender.role === 'employee') { %>
-                  <span class="ml-2 inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">Staff</span>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+          <div>
+            <p class="text-sm text-gray-500 mb-1">Last activity</p>
+            <p class="text-gray-700"><%= new Date(ticket.lastActivity).toLocaleString() %></p>
+          </div>
+          
+          <div>
+            <p class="text-sm text-gray-500 mb-1">Total messages</p>
+            <p class="text-gray-700"><%= messages.length %></p>
+          </div>
+        </div>
+        
+        <!-- Latest 2 messages preview -->
+        <div class="border-t pt-4 mt-4">
+          <p class="text-sm text-gray-500 mb-2">Latest messages</p>
+          
+          <% const latestMessages = messages.slice(-2).reverse(); %>
+          <% latestMessages.forEach((message, index) => { %>
+            <div class="flex items-start gap-3 <%= index === 0 ? '' : 'mt-4 pt-4 border-t' %>">
+              <div class="flex-shrink-0 w-8 h-8 rounded-full overflow-hidden bg-gray-200">
+                <% if (message.sender.profileImage) { %>
+                  <img src="<%= message.sender.profileImage %>" alt="Avatar" class="w-full h-full object-cover">
+                <% } else { %>
+                  <div class="w-full h-full flex items-center justify-center text-sm font-medium text-gray-500">
+                    <%= message.sender.firstName.charAt(0).toUpperCase() %>
+                  </div>
                 <% } %>
-                <span class="ml-2 text-xs text-gray-500">
-                  <%= new Date(message.createdAt).toLocaleString() %>
-                </span>
               </div>
               
-              <% if (message.contentType === 'text') { %>
-                <!-- Text content -->
-                <p class="text-gray-800 whitespace-pre-wrap"><%= message.content %></p>
-              <% } else if (message.contentType === 'image') { %>
-                <!-- Image content -->
-                <div class="mt-2">
-                  <img src="<%= message.fileUrl %>" alt="Uploaded image" class="max-w-full rounded-md max-h-64">
+              <div class="flex-1">
+                <div class="flex items-center mb-1">
+                  <p class="text-sm font-medium text-gray-900">
+                    <%= message.sender.firstName %> <%= message.sender.lastName %>
+                  </p>
+                  <% if (message.sender.role === 'customer') { %>
+                    <span class="ml-2 inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">Customer</span>
+                  <% } else if (message.sender.role === 'employee') { %>
+                    <span class="ml-2 inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">Staff</span>
+                  <% } else if (message.sender.role === 'admin') { %>
+                    <span class="ml-2 inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">Admin</span>
+                  <% } %>
+                  <span class="ml-2 text-xs text-gray-500">
+                    <%= new Date(message.createdAt).toLocaleString() %>
+                  </span>
                 </div>
-              <% } %>
+                
+                <% if (message.contentType === 'text') { %>
+                  <p class="text-gray-700 text-sm">
+                    <%= message.content.length > 100 
+                        ? message.content.substring(0, 100) + '...' 
+                        : message.content %>
+                  </p>
+                <% } else if (message.contentType === 'image') { %>
+                  <p class="text-gray-700 text-sm italic">
+                    [Image attachment]
+                  </p>
+                <% } %>
+              </div>
             </div>
-          </div>
-        <% }); %>
+          <% }); %>
+          
+          <% if (messages.length > 2) { %>
+            <div class="mt-4 text-center">
+              <a href="/admin/tickets/<%= ticket._id %>/messages" class="text-blue-600 hover:text-blue-800 text-sm">
+                View all <%= messages.length %> messages →
+              </a>
+            </div>
+          <% } %>
+        </div>
       <% } else { %>
-        <div class="text-center py-6 text-gray-500">
-          No messages yet. Start the conversation below.
+        <div class="text-center py-6">
+          <p class="text-gray-500">No messages yet.</p>
+          <a href="/admin/tickets/<%= ticket._id %>/messages" class="mt-2 inline-block text-blue-600 hover:text-blue-800">
+            Start a conversation
+          </a>
         </div>
       <% } %>
     </div>
-    
-    <!-- Message input area -->
-    <% if (ticket.status !== 'closed') { %>
-      <div id="message-form" class="mt-auto border-t pt-4">
-        <form id="ticket-message-form" class="flex flex-col gap-2">
-          <textarea 
-            id="message-content" 
-            name="content" 
-            rows="3" 
-            placeholder="Type your message here..." 
-            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            required
-          ></textarea>
-          
-          <div class="flex justify-between items-center">
-            <div class="flex items-center">
-              <label for="message-image" class="cursor-pointer bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1 rounded-md text-sm flex items-center">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
-                Attach Image
-              </label>
-              <input type="file" id="message-image" name="image" class="hidden" accept="image/*">
-              <span id="file-name" class="ml-2 text-sm text-gray-500"></span>
-            </div>
-            
-            <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium">
-              Send Message
-            </button>
-          </div>
-        </form>
-      </div>
-    <% } else { %>
-      <div class="mt-4 bg-gray-50 p-4 border border-gray-200 rounded-md">
-        <p class="text-center text-gray-600">This ticket is closed. No new messages can be added.</p>
-      </div>
-    <% } %>
   </div>
 </div>
 
-<script src="/socket.io/socket.io.js"></script>
 <script>
   document.addEventListener('DOMContentLoaded', function() {
-    // Connect to Socket.IO server
-    const socket = io();
-    const ticketId = '<%= ticket._id %>';
+    // Toggle metadata functionality
+    const toggleBtn = document.getElementById('toggle-metadata-btn');
+    const metadataSection = document.getElementById('ticket-metadata');
     
-    // Join the ticket room
-    socket.emit('join-ticket', ticketId);
-    
-    // Handle new messages from server
-    socket.on('new-message', function(data) {
-      addMessageToUI(data.message);
-      scrollToBottom();
-    });
-    
-    // Handle ticket updates from server
-    socket.on('ticket-updated', function(data) {
-      updateTicketUI(data.ticket);
-    });
-    
-    // Handle file input change
-    const fileInput = document.getElementById('message-image');
-    const fileNameDisplay = document.getElementById('file-name');
-    
-    if (fileInput) {
-      fileInput.addEventListener('change', function() {
-        if (this.files.length > 0) {
-          fileNameDisplay.textContent = this.files[0].name;
-        } else {
-          fileNameDisplay.textContent = '';
-        }
+    if (toggleBtn && metadataSection) {
+      toggleBtn.addEventListener('click', function() {
+        metadataSection.classList.toggle('collapsed');
+        toggleBtn.classList.toggle('collapsed');
+        
+        // Store preference in localStorage
+        const isCollapsed = metadataSection.classList.contains('collapsed');
+        localStorage.setItem('ticket-metadata-collapsed', isCollapsed);
       });
-    }
-    
-    // Handle message form submission
-    const messageForm = document.getElementById('ticket-message-form');
-    
-    if (messageForm) {
-      messageForm.addEventListener('submit', function(e) {
-        e.preventDefault();
-        
-        const formData = new FormData(this);
-        const messageContent = document.getElementById('message-content').value;
-        const messageImage = document.getElementById('message-image').files[0];
-        
-        // Don't submit empty messages
-        if (!messageContent.trim() && !messageImage) {
-          return;
-        }
-        
-        // Send message to server
-        fetch('/admin/tickets/<%= ticket._id %>/message', {
-          method: 'POST',
-          body: formData
-        })
-        .then(response => response.json())
-        .then(data => {
-          if (data.success) {
-            // Clear the form
-            document.getElementById('message-content').value = '';
-            document.getElementById('message-image').value = '';
-            fileNameDisplay.textContent = '';
-          } else {
-            alert('Error sending message: ' + data.message);
-          }
-        })
-        .catch(error => {
-          console.error('Error:', error);
-          alert('An error occurred while sending the message');
-        });
-      });
-    }
-    
-    // Handle ticket updates
-    const saveChangesBtn = document.getElementById('save-changes-btn');
-    const saveStatus = document.getElementById('save-status');
-    
-    if (saveChangesBtn) {
-      saveChangesBtn.addEventListener('click', function() {
-        const status = document.getElementById('status').value;
-        const priority = document.getElementById('priority').value;
-        const category = document.getElementById('category').value;
-        
-        // Show loading state
-        saveChangesBtn.disabled = true;
-        saveChangesBtn.innerHTML = 'Saving...';
-        
-        fetch('/admin/tickets/<%= ticket._id %>/update', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            status,
-            priority,
-            category
-          })
-        })
-        .then(response => response.json())
-        .then(data => {
-          // Reset button state
-          saveChangesBtn.disabled = false;
-          saveChangesBtn.innerHTML = 'Save Changes';
-          
-          if (data.success) {
-            saveStatus.className = 'mt-3 text-sm text-green-600';
-            saveStatus.textContent = 'Changes saved successfully';
-            
-            setTimeout(() => {
-              saveStatus.textContent = '';
-            }, 3000);
-          } else {
-            saveStatus.className = 'mt-3 text-sm text-red-600';
-            saveStatus.textContent = data.message || 'Error saving changes';
-          }
-        })
-        .catch(error => {
-          // Reset button state
-          saveChangesBtn.disabled = false;
-          saveChangesBtn.innerHTML = 'Save Changes';
-          
-          console.error('Error:', error);
-          saveStatus.className = 'mt-3 text-sm text-red-600';
-          saveStatus.textContent = 'An error occurred while saving changes';
-        });
-      });
-    }
-    
-    // Helper function to assign ticket
-    window.assignTo = function(assignTo) {
-      // Show loading indication
-      const saveStatus = document.getElementById('save-status');
-      saveStatus.className = 'mt-3 text-sm text-blue-600';
-      saveStatus.textContent = 'Updating assignment...';
       
-      fetch('/admin/tickets/<%= ticket._id %>/update', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          assignTo
-        })
-      })
-      .then(response => {
-        // Check if response is ok before parsing JSON
-        if (!response.ok) {
-          throw new Error(`Server responded with status: ${response.status}`);
-        }
-        return response.json();
-      })
-      .then(data => {
-        if (data.success) {
-          saveStatus.className = 'mt-3 text-sm text-green-600';
-          saveStatus.textContent = 'Assignment updated successfully';
-          
-          // Update UI to reflect assignment change
-          const assignedToElement = document.querySelector('[data-field="assignedTo"]');
-          if (assignedToElement) {
-            if (assignTo === 'me') {
-              assignedToElement.textContent = '<%= user.firstName %> <%= user.lastName %>';
-            } else if (assignTo === 'none') {
-              assignedToElement.textContent = 'N/A';
-            }
-          }
-          
-          setTimeout(() => {
-            saveStatus.textContent = '';
-          }, 3000);
-        } else {
-          saveStatus.className = 'mt-3 text-sm text-red-600';
-          saveStatus.textContent = data.message || 'Error updating assignment';
-        }
-      })
-      .catch(error => {
-        console.error('Error:', error);
-        saveStatus.className = 'mt-3 text-sm text-red-600';
-        saveStatus.textContent = 'An error occurred while updating assignment';
-      });
-    };
-    
-    // Helper function to add a message to the UI
-    function addMessageToUI(message) {
-      const messagesContainer = document.getElementById('messages-container');
-      const userId = '<%= user.id %>';
-      
-      // Create message element
-      const messageDiv = document.createElement('div');
-      messageDiv.className = `flex ${message.sender._id === userId ? 'flex-row-reverse' : ''} items-start gap-3`;
-      
-      // Avatar
-      const avatarHtml = message.sender.profileImage 
-        ? `<img src="${message.sender.profileImage}" alt="Avatar" class="w-full h-full object-cover">`
-        : `<div class="w-full h-full flex items-center justify-center text-sm font-medium text-gray-500">${message.sender.firstName.charAt(0).toUpperCase()}</div>`;
-      
-      // Role badge
-      let roleBadge = '';
-      if (message.sender.role === 'admin') {
-        roleBadge = '<span class="ml-2 inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">Admin</span>';
-      } else if (message.sender.role === 'employee') {
-        roleBadge = '<span class="ml-2 inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">Staff</span>';
-      }
-      
-      // Message content
-      let contentHtml = '';
-      if (message.contentType === 'text') {
-        contentHtml = `<p class="text-gray-800 whitespace-pre-wrap">${message.content}</p>`;
-      } else if (message.contentType === 'image') {
-        contentHtml = `<div class="mt-2"><img src="${message.fileUrl}" alt="Uploaded image" class="max-w-full rounded-md max-h-64"></div>`;
-      }
-      
-      // Set the HTML
-      messageDiv.innerHTML = `
-        <div class="flex-shrink-0 w-8 h-8 rounded-full overflow-hidden bg-gray-100">
-          ${avatarHtml}
-        </div>
-        
-        <div class="${message.sender._id === userId ? 'bg-blue-100' : 'bg-gray-100'} rounded-lg p-3 max-w-[80%]">
-          <div class="flex items-center mb-1">
-            <span class="text-xs font-medium text-gray-700">
-              ${message.sender.firstName} ${message.sender.lastName}
-            </span>
-            ${roleBadge}
-            <span class="ml-2 text-xs text-gray-500">
-              ${new Date(message.createdAt).toLocaleString()}
-            </span>
-          </div>
-          
-          ${contentHtml}
-        </div>
-      `;
-      
-      // Add to container
-      messagesContainer.appendChild(messageDiv);
-    }
-    
-    // Helper function to update ticket UI when ticket is updated
-    function updateTicketUI(ticket) {
-      // Update status display
-      const statusSelect = document.getElementById('status');
-      if (statusSelect) statusSelect.value = ticket.status;
-      
-      // Update priority display
-      const prioritySelect = document.getElementById('priority');
-      if (prioritySelect) prioritySelect.value = ticket.priority || '';
-      
-      // Update category display
-      const categorySelect = document.getElementById('category');
-      if (categorySelect) categorySelect.value = ticket.category;
-      
-      // Show notification that ticket was updated
-      const saveStatus = document.getElementById('save-status');
-      if (saveStatus) {
-        saveStatus.classList.add('text-blue-600');
-        saveStatus.textContent = 'Ticket was updated by another staff member';
-        
-        setTimeout(() => {
-          saveStatus.textContent = '';
-        }, 3000);
+      // Check for saved preference
+      const savedPreference = localStorage.getItem('ticket-metadata-collapsed');
+      if (savedPreference === 'true') {
+        metadataSection.classList.add('collapsed');
+        toggleBtn.classList.add('collapsed');
       }
     }
-    
-    // Scroll to the bottom of the messages container
-    function scrollToBottom() {
-      const messagesContainer = document.getElementById('messages-container');
-      messagesContainer.scrollTop = messagesContainer.scrollHeight;
-    }
-    
-    // Initial scroll to bottom
-    scrollToBottom();
-    
-    // Clean up when leaving the page
-    window.addEventListener('beforeunload', function() {
-      socket.emit('leave-ticket', ticketId);
-    });
   });
 </script>

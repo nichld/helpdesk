@@ -1,16 +1,25 @@
-<div class="flex flex-col gap-6">
+<div class="ticket-container">
   <!-- Back button -->
-  <div>
-    <a href="/tickets" class="inline-flex items-center text-sm text-blue-600 hover:text-blue-800">
-      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-      </svg>
-      Back to tickets
-    </a>
+  <div class="ticket-header mb-2">
+    <div class="flex justify-between items-center">
+      <a href="/tickets" class="inline-flex items-center text-sm text-blue-600 hover:text-blue-800">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+        </svg>
+        Back to tickets
+      </a>
+      
+      <button id="toggle-metadata-btn" class="toggle-metadata-btn">
+        Ticket Details
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 ml-1" viewBox="0 0 20 20" fill="currentColor">
+          <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+        </svg>
+      </button>
+    </div>
   </div>
   
-  <!-- Ticket header -->
-  <div class="bg-white border border-gray-200 rounded-lg p-6">
+  <!-- Ticket metadata section (collapsible) -->
+  <div id="ticket-metadata" class="ticket-metadata bg-white border border-gray-200 rounded-lg p-6 mb-4">
     <div class="flex flex-col md:flex-row md:justify-between md:items-start gap-4">
       <div>
         <div class="flex items-center gap-3 mb-2">
@@ -85,457 +94,106 @@
     </div>
   </div>
   
-  <!-- Messages container -->
-  <div class="bg-white border border-gray-200 rounded-lg p-6 flex flex-col">
-    <h2 class="text-xl font-semibold mb-6">Messages</h2>
+  <!-- Messages section - preview only -->
+  <div class="bg-white border border-gray-200 rounded-lg p-6">
+    <div class="flex justify-between items-center mb-4">
+      <h2 class="text-xl font-semibold">Messages</h2>
+      
+      <a href="/tickets/<%= ticket._id %>/messages" 
+         class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium flex items-center"
+         target="_blank">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
+          <path fill-rule="evenodd" d="M18 10c0 3.866-3.582 7-8 7a8.841 8.841 0 01-4.083-.98L2 17l1.338-3.123C2.493 12.767 2 11.434 2 10c0-3.866 3.582-7 8-7s8 3.134 8 7zM7 9H5v2h2V9zm8 0h-2v2h2V9zM9 9h2v2H9V9z" clip-rule="evenodd" />
+        </svg>
+        View Messages
+      </a>
+    </div>
     
-    <div id="messages-container" class="flex flex-col gap-6 mb-8 max-h-[600px] overflow-y-auto">
+    <div class="border rounded-lg p-4 bg-gray-50">
       <% if (messages && messages.length > 0) { %>
-        <% messages.forEach(message => { %>
-          <% 
-            // Add debugging output for message IDs to browser console
-            console.log(`Message sender ID: ${message.sender._id}, Current user ID: ${user.id}`);
-            
-            // Fix message ownership comparison - ensure we're using string representation and proper comparison
-            const messageAuthorId = typeof message.sender._id === 'object' ? message.sender._id.toString() : String(message.sender._id);
-            const currentUserId = typeof user.id === 'object' ? user.id.toString() : String(user.id);
-            
-            // Remove any quotes that might be wrapped around the ID
-            const cleanSenderId = messageAuthorId.replace(/^"(.*)"$/, '$1').trim();
-            const cleanUserId = currentUserId.replace(/^"(.*)"$/, '$1').trim();
-            
-            // Final comparison to determine if the current user is the message author
-            const isOwnMessage = cleanSenderId === cleanUserId;
-          %>
-          <div class="flex <%= isOwnMessage ? 'flex-row-reverse' : '' %> items-start gap-3" 
-               data-message-id="<%= message._id %>"
-               data-sender-id="<%= cleanSenderId %>"
-               data-current-user-id="<%= cleanUserId %>"
-               data-is-own-message="<%= isOwnMessage %>">
-            <div class="flex-shrink-0 w-8 h-8 rounded-full overflow-hidden bg-gray-100">
-              <% if (message.sender.profileImage) { %>
-                <img src="<%= message.sender.profileImage %>" alt="Avatar" class="w-full h-full object-cover">
+        <div class="mb-4">
+          <p class="text-sm text-gray-500 mb-1">Last activity</p>
+          <p class="text-gray-700"><%= new Date(ticket.lastActivity).toLocaleString() %></p>
+        </div>
+        
+        <div class="mb-4">
+          <p class="text-sm text-gray-500 mb-1">Total messages</p>
+          <p class="text-gray-700"><%= messages.length %></p>
+        </div>
+        
+        <!-- Latest message preview -->
+        <div class="border-t pt-4 mt-4">
+          <p class="text-sm text-gray-500 mb-2">Latest message</p>
+          <div class="flex items-start gap-3">
+            <% const latestMessage = messages[messages.length - 1]; %>
+            <div class="flex-shrink-0 w-8 h-8 rounded-full overflow-hidden bg-gray-200">
+              <% if (latestMessage.sender.profileImage) { %>
+                <img src="<%= latestMessage.sender.profileImage %>" alt="Avatar" class="w-full h-full object-cover">
               <% } else { %>
                 <div class="w-full h-full flex items-center justify-center text-sm font-medium text-gray-500">
-                  <%= message.sender.firstName.charAt(0).toUpperCase() %>
+                  <%= latestMessage.sender.firstName.charAt(0).toUpperCase() %>
                 </div>
               <% } %>
             </div>
             
-            <!-- Message bubble -->
-            <div class="<%= isOwnMessage ? 'bg-blue-100' : 'bg-gray-100' %> rounded-lg p-3 max-w-[80%]">
-              <!-- Sender info -->
+            <div class="flex-1">
               <div class="flex items-center mb-1">
-                <span class="text-xs font-medium text-gray-700">
-                  <%= message.sender.firstName %> <%= message.sender.lastName %>
-                </span>
-                <% if (message.sender.role === 'admin') { %>
-                  <span class="ml-2 inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">Admin</span>
-                <% } else if (message.sender.role === 'employee') { %>
-                  <span class="ml-2 inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">Staff</span>
-                <% } %>
+                <p class="text-sm font-medium text-gray-900">
+                  <%= latestMessage.sender.firstName %> <%= latestMessage.sender.lastName %>
+                </p>
                 <span class="ml-2 text-xs text-gray-500">
-                  <%= new Date(message.createdAt).toLocaleString() %>
+                  <%= new Date(latestMessage.createdAt).toLocaleString() %>
                 </span>
               </div>
               
-              <% if (message.contentType === 'text') { %>
-                <!-- Text content -->
-                <p class="text-gray-800 whitespace-pre-wrap"><%= message.content %></p>
-              <% } else if (message.contentType === 'image') { %>
-                <!-- Image content -->
-                <div class="mt-2">
-                  <img src="<%= message.fileUrl %>" alt="Uploaded image" class="max-w-full rounded-md max-h-64">
-                </div>
+              <% if (latestMessage.contentType === 'text') { %>
+                <p class="text-gray-700 text-sm truncate">
+                  <%= latestMessage.content.length > 100 
+                      ? latestMessage.content.substring(0, 100) + '...' 
+                      : latestMessage.content %>
+                </p>
+              <% } else if (latestMessage.contentType === 'image') { %>
+                <p class="text-gray-700 text-sm italic">
+                  [Image attachment]
+                </p>
               <% } %>
             </div>
           </div>
-        <% }); %>
+        </div>
       <% } else { %>
-        <div class="text-center py-6 text-gray-500">
-          No messages yet. Start the conversation below.
+        <div class="text-center py-6">
+          <p class="text-gray-500">No messages yet.</p>
+          <a href="/tickets/<%= ticket._id %>/messages" class="mt-2 inline-block text-blue-600 hover:text-blue-800">
+            Start a conversation
+          </a>
         </div>
       <% } %>
     </div>
-    
-    <!-- Message input area -->
-    <% if (ticket.status !== 'closed') { %>
-      <div id="message-form" class="mt-auto border-t pt-4">
-        <form id="ticket-message-form" class="flex flex-col gap-2">
-          <textarea 
-            id="message-content" 
-            name="content" 
-            rows="3" 
-            placeholder="Type your message here..." 
-            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            required
-          ></textarea>
-          
-          <div class="flex justify-between items-center">
-            <div class="flex items-center">
-              <label for="message-image" class="cursor-pointer bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1 rounded-md text-sm flex items-center">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
-                Attach Image
-              </label>
-              <input type="file" id="message-image" name="image" class="hidden" accept="image/*">
-              <span id="file-name" class="ml-2 text-sm text-gray-500"></span>
-            </div>
-            
-            <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium">
-              Send Message
-            </button>
-          </div>
-        </form>
-      </div>
-    <% } else { %>
-      <div class="mt-4 bg-gray-50 p-4 border border-gray-200 rounded-md">
-        <p class="text-center text-gray-600">This ticket is closed. No new messages can be added.</p>
-      </div>
-    <% } %>
   </div>
 </div>
 
-<script src="/socket.io/socket.io.js"></script>
 <script>
   document.addEventListener('DOMContentLoaded', function() {
-    console.log('Initializing ticket detail page...');
-    console.log('User role:', '<%= user.role %>');
-    console.log('User ID:', '<%= user.id %>');
-    console.log('Is employee flag:', <%= isEmployee %>);
+    // Toggle metadata functionality
+    const toggleBtn = document.getElementById('toggle-metadata-btn');
+    const metadataSection = document.getElementById('ticket-metadata');
     
-    // Connect to Socket.IO server with more debug info
-    const socket = io({
-      reconnectionAttempts: 10,
-      reconnectionDelay: 500,
-      timeout: 20000,
-      transports: ['websocket', 'polling'], // Try websocket first, then polling
-      auth: {
-        userId: '<%= user.id %>'
-      }
-    });
-
-    const ticketId = '<%= ticket._id %>';
-    let socketConnected = false;
-    
-    // Socket connection events
-    socket.on('connect', function() {
-      console.log('Socket connected! ID:', socket.id);
-      socketConnected = true;
-      
-      // Show connection status
-      if (window.showToast) {
-        window.showToast('Real-time connection established', 'success');
-      } else {
-        console.log('Toast notification not available');
-      }
-      
-      // Join the ticket room - IMPORTANT for real-time updates
-      console.log('Joining ticket room:', ticketId);
-      socket.emit('join-ticket', ticketId);
-    });
-    
-    // Check if we're in the room
-    socket.on('room-status', function(data) {
-      console.log('Room status:', data);
-    });
-    
-    // Handle new messages from server
-    socket.on('new-message', function(data) {
-      console.log('New message received via socket:', data);
-      if (data && data.message) {
-        // Check if the message is already on the page to avoid duplication
-        const existingMsg = document.querySelector(`[data-message-id="${data.message._id}"]`);
-        if (!existingMsg) {
-          // Add message and scroll to bottom
-          addMessageToUI(data.message);
-          scrollToBottom();
-          
-          // Add a visual indicator for the new message (flash effect)
-          const messages = document.querySelectorAll('#messages-container > div');
-          if (messages.length > 0) {
-            const lastMessage = messages[messages.length - 1];
-            lastMessage.classList.add('new-message-highlight');
-            
-            setTimeout(() => {
-              lastMessage.classList.remove('new-message-highlight');
-            }, 1500);
-          }
-        } else {
-          console.log('Message already exists in UI, not adding duplicate');
-        }
-      } else {
-        console.error('Received incomplete message data:', data);
-      }
-    });
-    
-    socket.on('connect_error', function(err) {
-      console.error('Socket connection error:', err);
-      socketConnected = false;
-      if (window.showToast) {
-        window.showToast('Connection error: ' + err.message, 'error');
-      }
-    });
-    
-    socket.on('disconnect', function(reason) {
-      console.log('Socket disconnected, reason:', reason);
-      socketConnected = false;
-      if (window.showToast) {
-        window.showToast('Real-time connection lost. Reconnecting...', 'warning');
-      }
-    });
-    
-    socket.on('reconnect', function(attemptNumber) {
-      console.log('Socket reconnected after', attemptNumber, 'attempts');
-      if (window.showToast) {
-        window.showToast('Connection restored', 'success');
-      }
-    });
-    
-    socket.on('reconnect_failed', function() {
-      console.error('Socket failed to reconnect after max attempts');
-      if (window.showToast) {
-        window.showToast('Failed to restore connection. Please refresh the page.', 'error');
-      }
-    });
-    
-    // Handle ticket updates
-    socket.on('ticket-updated', function(data) {
-      console.log('Ticket update received:', data);
-      // Handle ticket updates if needed
-    });
-    
-    // Handle file input change
-    const fileInput = document.getElementById('message-image');
-    const fileNameDisplay = document.getElementById('file-name');
-    
-    if (fileInput) {
-      fileInput.addEventListener('change', function() {
-        if (this.files.length > 0) {
-          fileNameDisplay.textContent = this.files[0].name;
-        } else {
-          fileNameDisplay.textContent = '';
-        }
-      });
-    }
-    
-    // Handle form submission
-    const messageForm = document.getElementById('ticket-message-form');
-    
-    if (messageForm) {
-      messageForm.addEventListener('submit', function(e) {
-        e.preventDefault();
+    if (toggleBtn && metadataSection) {
+      toggleBtn.addEventListener('click', function() {
+        metadataSection.classList.toggle('collapsed');
+        toggleBtn.classList.toggle('collapsed');
         
-        const formData = new FormData(this);
-        const messageContent = document.getElementById('message-content').value;
-        const messageImage = document.getElementById('message-image').files[0];
-        
-        // Don't submit empty messages
-        if (!messageContent.trim() && !messageImage) {
-          if (window.showToast) {
-            window.showToast('Please enter a message or attach an image', 'warning');
-          }
-          return;
-        }
-        
-        console.log('Sending message, content length:', messageContent?.length || 0);
-        console.log('Image attached:', messageImage ? 'yes' : 'no');
-        
-        // IMPORTANT: Use the correct endpoint path for customers and employees
-        const endpoint = '/tickets/<%= ticket._id %>/message';
-        
-        // Disable submit button while sending
-        const submitButton = this.querySelector('button[type="submit"]');
-        submitButton.disabled = true;
-        submitButton.innerHTML = 'Sending...';
-        
-        // Send message to server
-        fetch(endpoint, {
-          method: 'POST',
-          body: formData
-        })
-        .then(response => {
-          console.log('Server response status:', response.status);
-          if (!response.ok) {
-            throw new Error(`Server responded with status: ${response.status}`);
-          }
-          return response.json();
-        })
-        .then(data => {
-          // Re-enable button
-          submitButton.disabled = false;
-          submitButton.innerHTML = 'Send Message';
-          
-          console.log('Message send response:', data);
-          
-          if (data.success) {
-            // Clear the form
-            document.getElementById('message-content').value = '';
-            document.getElementById('message-image').value = '';
-            fileNameDisplay.textContent = '';
-            
-            // If socket not connected, manually add message to UI
-            if (!socketConnected && data.message) {
-              addMessageToUI(data.message);
-              scrollToBottom();
-            }
-          } else {
-            showError('Error sending message: ' + data.message);
-          }
-        })
-        .catch(error => {
-          // Re-enable button
-          submitButton.disabled = false;
-          submitButton.innerHTML = 'Send Message';
-          
-          console.error('Error sending message:', error);
-          showError('An error occurred while sending the message');
-        });
-      });
-    } else {
-      console.error('Message form not found!');
-    }
-    
-    // Helper function to add a message to the UI - improved ID comparison
-    function addMessageToUI(message) {
-      const messagesContainer = document.getElementById('messages-container');
-      if (!messagesContainer) {
-        console.error('Messages container not found');
-        return;
-      }
-      
-      // CRITICAL FIX - Standardize ID handling
-      // Get both IDs as strings, ensure to handle object vs string representations
-      let senderId = typeof message.sender._id === 'object' 
-        ? message.sender._id.toString() 
-        : String(message.sender._id);
-      
-      let userId = typeof '<%= user.id %>' === 'object'
-        ? '<%= user.id %>'.toString()
-        : String('<%= user.id %>');
-      
-      // Remove any wrapping quotes and trim whitespace
-      senderId = senderId.replace(/^"(.*)"$/, '$1').trim();
-      userId = userId.replace(/^"(.*)"$/, '$1').trim();
-      
-      console.log('Comparison for new message:');
-      console.log('- Sender ID:', senderId);
-      console.log('- User ID:', userId);
-      
-      // Check if the current user is the message sender
-      const isOwnMessage = senderId === userId;
-      console.log('- Is own message:', isOwnMessage);
-      
-      // Create message element with proper ownership
-      const messageDiv = document.createElement('div');
-      messageDiv.className = `flex ${isOwnMessage ? 'flex-row-reverse' : ''} items-start gap-3`;
-      messageDiv.dataset.messageId = message._id;
-      messageDiv.dataset.senderId = senderId;
-      messageDiv.dataset.currentUserId = userId;
-      messageDiv.dataset.isOwnMessage = isOwnMessage;
-      
-      const avatarHtml = message.sender.profileImage 
-        ? `<img src="${message.sender.profileImage}" alt="Avatar" class="w-full h-full object-cover">`
-        : `<div class="w-full h-full flex items-center justify-center text-sm font-medium text-gray-500">${message.sender.firstName.charAt(0).toUpperCase()}</div>`;
-      
-      let roleBadge = '';
-      if (message.sender.role === 'admin') {
-        roleBadge = '<span class="ml-2 inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">Admin</span>';
-      } else if (message.sender.role === 'employee') {
-        roleBadge = '<span class="ml-2 inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">Staff</span>';
-      } else if (message.sender.role === 'customer') {
-        roleBadge = '<span class="ml-2 inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">Customer</span>';
-      }
-      
-      messageDiv.innerHTML = `
-        <div class="flex-shrink-0 w-8 h-8 rounded-full overflow-hidden bg-gray-100">
-          ${avatarHtml}
-        </div>
-        
-        <div class="${isOwnMessage ? 'bg-blue-100' : 'bg-gray-100'} rounded-lg p-3 max-w-[80%]">
-          <div class="flex items-center mb-1">
-            <span class="text-xs font-medium text-gray-700">
-              ${escapeHtml(message.sender.firstName)} ${escapeHtml(message.sender.lastName)}
-            </span>
-            ${roleBadge}
-            <span class="ml-2 text-xs text-gray-500">
-              ${new Date(message.createdAt).toLocaleString()}
-            </span>
-          </div>
-          
-          ${message.contentType === 'text' 
-            ? `<p class="text-gray-800 whitespace-pre-wrap">${escapeHtml(message.content)}</p>` 
-            : `<div class="mt-2"><img src="${message.fileUrl}" alt="Uploaded image" class="max-w-full rounded-md max-h-64"></div>`}
-        </div>
-      `;
-      
-      messagesContainer.appendChild(messageDiv);
-      console.log('Message added to UI, own message:', isOwnMessage);
-      scrollToBottom();
-    }
-    
-    // Helper function to escape HTML to prevent XSS
-    function escapeHtml(text) {
-      if (!text) return '';
-      
-      const map = {
-        '&': '&amp;',
-        '<': '&lt;',
-        '>': '&gt;',
-        '"': '&quot;',
-        "'": '&#039;'
-      };
-      
-      return text.replace(/[&<>"']/g, function(m) { return map[m]; });
-    }
-    
-    // Helper function to show error messages
-    function showError(message) {
-      if (window.showToast) {
-        window.showToast(message, 'error');
-      } else {
-        alert(message);
-      }
-    }
-    
-    // Improved scroll to bottom function with smooth scrolling
-    function scrollToBottom() {
-      const messagesContainer = document.getElementById('messages-container');
-      if (messagesContainer) {
-        messagesContainer.scrollTo({
-          top: messagesContainer.scrollHeight,
-          behavior: 'smooth'
-        });
-      }
-    }
-    
-    // Scroll to bottom on initial load and whenever window resizes
-    scrollToBottom();
-    window.addEventListener('resize', scrollToBottom);
-    
-    // Observe new messages being added to auto-scroll (for non-socket updates)
-    const messagesContainer = document.getElementById('messages-container');
-    if (messagesContainer) {
-      const observer = new MutationObserver(mutations => {
-        mutations.forEach(mutation => {
-          if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
-            scrollToBottom();
-          }
-        });
+        // Store preference in localStorage
+        const isCollapsed = metadataSection.classList.contains('collapsed');
+        localStorage.setItem('ticket-metadata-collapsed', isCollapsed);
       });
       
-      observer.observe(messagesContainer, {
-        childList: true
-      });
-    }
-    
-    // Clean up when leaving the page
-    window.addEventListener('beforeunload', function() {
-      if (socketConnected) {
-        console.log('Leaving ticket room:', ticketId);
-        socket.emit('leave-ticket', ticketId);
+      // Check for saved preference
+      const savedPreference = localStorage.getItem('ticket-metadata-collapsed');
+      if (savedPreference === 'true') {
+        metadataSection.classList.add('collapsed');
+        toggleBtn.classList.add('collapsed');
       }
-    });
+    }
   });
 </script>

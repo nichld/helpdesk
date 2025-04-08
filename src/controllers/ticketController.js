@@ -384,11 +384,16 @@ exports.employeeTicketDetail = async (req, res) => {
       });
     }
     
+    // Make sure to clearly log the user ID for debugging
+    console.log('Employee viewing ticket - User ID:', req.session.user.id);
+    console.log('Employee role:', req.session.user.role);
+    
     res.render('tickets/employee-ticket-detail', {
       title: `Ticket: ${result.ticket.title}`,
       ticket: result.ticket,
       messages: result.messages,
-      isEmployee: true
+      isEmployee: true,
+      user: req.session.user // Explicitly pass the full user object
     });
   } catch (error) {
     console.error('Error in employeeTicketDetail:', error);
@@ -439,6 +444,63 @@ exports.updateTicket = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'An error occurred while updating the ticket'
+    });
+  }
+};
+
+/**
+ * Ticket messages view - shared between customer and employee
+ */
+exports.ticketMessages = async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const result = await ticketService.getTicketById(id);
+    
+    if (!result.success) {
+      return res.render('error', {
+        title: 'Ticket Not Found',
+        message: result.message,
+        error: { status: 404 }
+      });
+    }
+    
+    // Check permissions - customer can only see their own tickets
+    if (req.session.user.role === 'customer') {
+      const customerId = result.ticket.customer._id.toString();
+      const userId = req.session.user.id.toString();
+      
+      if (customerId !== userId) {
+        return res.render('error', {
+          title: 'Access Denied',
+          message: 'You do not have permission to view this ticket',
+          error: { status: 403 }
+        });
+      }
+    }
+    
+    // Determine if user is employee/admin for UI customization
+    const isEmployee = req.session.user.role === 'employee' || req.session.user.role === 'admin';
+    
+    // Build the appropriate return URL based on user role
+    const returnUrl = isEmployee 
+      ? `/admin/tickets/${id}`
+      : `/tickets/${id}`;
+      
+    res.render('tickets/ticket-messages', {
+      title: `Messages for Ticket: ${result.ticket.title}`,
+      ticket: result.ticket,
+      messages: result.messages,
+      isEmployee: isEmployee,
+      returnUrl: returnUrl,
+      isMessagesPage: true // Flag to indicate this is the messages page
+    });
+  } catch (error) {
+    console.error('Error in ticketMessages:', error);
+    res.render('error', {
+      title: 'Error',
+      message: 'An error occurred while loading ticket messages',
+      error: { status: 500 }
     });
   }
 };

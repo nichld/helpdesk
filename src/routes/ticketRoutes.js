@@ -9,8 +9,7 @@ router.get('/tickets', ensureAuthenticated, ticketController.customerTickets);
 router.get('/tickets/create', ensureAuthenticated, ticketController.createTicketView);
 router.post('/tickets/create', ensureAuthenticated, ticketController.createTicket);
 router.get('/tickets/:id', ensureAuthenticated, ticketController.customerTicketDetail);
-
-// IMPORTANT: Make sure customer message posting doesn't require employee role
+router.get('/tickets/:id/messages', ensureAuthenticated, ticketController.ticketMessages);
 router.post('/tickets/:id/message', 
   ensureAuthenticated,  
   ticketUpload.single('image'), 
@@ -22,6 +21,7 @@ router.get('/admin/dashboard', ensureAuthenticated, ensureEmployee, ticketContro
 router.get('/admin/tickets', ensureAuthenticated, ensureEmployee, ticketController.employeeTickets);
 router.get('/admin/tickets/assigned', ensureAuthenticated, ensureEmployee, ticketController.employeeAssignedTickets);
 router.get('/admin/tickets/:id', ensureAuthenticated, ensureEmployee, ticketController.employeeTicketDetail);
+router.get('/admin/tickets/:id/messages', ensureAuthenticated, ensureEmployee, ticketController.ticketMessages);
 router.post('/admin/tickets/:id/update', ensureAuthenticated, ensureEmployee, ticketController.updateTicket);
 router.post('/admin/tickets/:id/message', 
   ensureAuthenticated,

@@ -1,12 +1,12 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="h-full">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title><% if (typeof title !== 'undefined') { %><%= title %><% } else { %>Drift Guides<% } %></title>
   
-  <!-- Add custom CSS file -->
-  <link rel="stylesheet" href="/css/custom.css">
+  <!-- Add custom CSS with critical flag to ensure it's loaded first -->
+  <link rel="stylesheet" href="/css/custom.css" importance="high">
   
   <% if (typeof style !== 'undefined') { %>
     <%- style %>
@@ -14,9 +14,9 @@
   
   <script src="https://unpkg.com/@tailwindcss/browser@4"></script>
 </head>
-<body class="bg-white h-[100dvh] flex flex-col justify-between">
+<body class="bg-white h-full flex flex-col">
   
-  <header class="sticky top-0 z-10">
+  <header class="sticky top-0 z-20">
     <%- include('../partials/navbar') %>
   </header>
 
@@ -24,12 +24,23 @@
     <%- include('../partials/popup', { message: message }) %>
   <% } %>
 
-  <main class="max-w-[1000px] p-4 md:p-8 lg:p-12 py-8 md:py-12 w-full mb-auto mx-auto">
+  <main class="flex-1 <%= typeof isMessagesPage !== 'undefined' && isMessagesPage ? 'p-0 max-w-full' : 'max-w-[1000px] px-4 md:px-8 lg:px-12' %> w-full mx-auto overflow-hidden">
     <%- body %>
   </main>
   
-  <%- include('../partials/footer') %>
-  
+  <% if (typeof isMessagesPage === 'undefined' || !isMessagesPage) { %>
+    <footer class="bg-neutral-50 border-t border-zinc-200 py-4">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <p class="text-center text-sm text-gray-500">
+          &copy; <%= new Date().getFullYear() %> Helpdesk System
+        </p>
+      </div>
+    </footer>
+  <% } %>
+
+  <!-- Toast notification container -->
+  <div id="toast-container" class="fixed bottom-5 right-5 z-50"></div>
+
   <% if (typeof script !== 'undefined') { %>
     <%- script %>
   <% } %>

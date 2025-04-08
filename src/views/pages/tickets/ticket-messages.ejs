@@ -1,0 +1,407 @@
+<div id="message-page-container" class="message-page-container">
+  <!-- Back button and ticket info -->
+  <div class="message-page-header p-6 bg-neutral-50 border-b border-zinc-200">
+    <div class="flex justify-between items-center">
+      <a href="<%= returnUrl %>" class="inline-flex items-center text-sm text-blue-600 hover:text-blue-800">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+        </svg>
+        Back to ticket
+      </a>
+      
+      <div class="flex items-center">
+        <span class="text-sm text-gray-500 mr-2">Ticket status:</span>
+        <% if (ticket.status === 'open') { %>
+          <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
+            Open
+          </span>
+        <% } else if (ticket.status === 'in-progress') { %>
+          <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+            In Progress
+          </span>
+        <% } else if (ticket.status === 'solved') { %>
+          <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+            Solved
+          </span>
+        <% } else if (ticket.status === 'closed') { %>
+          <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-800 text-white">
+            Closed
+          </span>
+        <% } %>
+      </div>
+    </div>
+    
+    <h1 class="text-2xl font-bold text-gray-900 mt-2"><%= ticket.title %></h1>
+  </div>
+  
+  <!-- Chat container - dynamically sized -->
+  <div class="message-page-content">    
+    <!-- Messages area with bubble design -->
+    <div id="messages-container" class="message-page-messages">
+      <% if (messages && messages.length > 0) { %>
+        <% messages.forEach(message => { 
+          let senderId, userId, isOwnMessage;
+          
+          try {
+            senderId = message.sender._id.toString().trim();
+            userId = user.id.toString().trim();
+            
+            isOwnMessage = senderId === userId;
+          } catch (err) {
+            console.error('Error comparing IDs:', err);
+            isOwnMessage = false;
+          }
+        %>
+          <div class="flex <%= isOwnMessage ? 'flex-row-reverse' : '' %> items-start gap-3 mb-4" 
+               data-message-id="<%= message._id %>"
+               data-sender-id="<%= senderId %>"
+               data-current-user-id="<%= userId %>"
+               data-is-own-message="<%= isOwnMessage %>">
+            
+            <!-- Message bubble with avatar inside -->
+            <div class="<%= isOwnMessage ? 'bg-blue-100' : 'bg-gray-100' %> message-bubble">
+              <!-- Sender info with avatar -->
+              <div class="message-header">
+                <div class="message-avatar">
+                  <% if (message.sender.profileImage) { %>
+                    <img src="<%= message.sender.profileImage %>" alt="Avatar" class="w-full h-full object-cover">
+                  <% } else { %>
+                    <div class="w-full h-full flex items-center justify-center text-sm font-medium text-gray-500 bg-gray-200">
+                      <%= message.sender.firstName.charAt(0).toUpperCase() %>
+                    </div>
+                  <% } %>
+                </div>
+                
+                <span class="message-sender">
+                  <%= message.sender.firstName %> <%= message.sender.lastName %>
+                </span>
+              </div>
+              
+              <!-- Message content -->
+              <% if (message.contentType === 'text') { %>
+                <p class="text-gray-800 whitespace-pre-wrap"><%= message.content %></p>
+              <% } else if (message.contentType === 'image') { %>
+                <div class="mt-2">
+                  <img src="<%= message.fileUrl %>" alt="Uploaded image" class="max-w-full rounded-md max-h-64">
+                </div>
+              <% } %>
+              
+              <!-- Timestamp (visible on hover) -->
+              <div class="message-timestamp">
+                <%= new Date(message.createdAt).toLocaleString() %>
+              </div>
+            </div>
+          </div>
+        <% }); %>
+      <% } else { %>
+        <div class="text-center py-6 text-gray-500">
+          No messages yet. Start the conversation below.
+        </div>
+      <% } %>
+    </div>
+    
+    <!-- Message input form -->
+    <% if (ticket.status !== 'closed') { %>
+      <div id="message-form" class="message-page-form">
+        <form id="ticket-message-form" class="flex flex-col gap-2">
+          <textarea 
+            id="message-content" 
+            name="content" 
+            rows="3" 
+            placeholder="Type your message here..." 
+            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          ></textarea>
+          
+          <div class="flex justify-between items-center">
+            <div class="flex items-center">
+              <label for="message-image" class="cursor-pointer bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1 rounded-md text-sm flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                Attach Image
+              </label>
+              <input type="file" id="message-image" name="image" class="hidden" accept="image/*">
+              <span id="file-name" class="ml-2 text-sm text-gray-500"></span>
+            </div>
+            
+            <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium">
+              Send Message
+            </button>
+          </div>
+        </form>
+      </div>
+    <% } else { %>
+      <div class="message-page-form bg-gray-50">
+        <p class="text-center text-gray-600">This ticket is closed. No new messages can be added.</p>
+      </div>
+    <% } %>
+  </div>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const socket = io({
+      reconnectionAttempts: 10,
+      reconnectionDelay: 500,
+      timeout: 20000,
+    });
+
+    const ticketId = '<%= ticket._id %>';
+    let socketConnected = false;
+    
+    // Socket connection events
+    socket.on('connect', function() {
+      console.log('Socket connected!');
+      socketConnected = true;
+      
+      if (window.showToast) {
+        window.showToast('Real-time connection established', 'success');
+      }
+      
+      socket.emit('join-ticket', ticketId);
+    });
+    
+    // Handle new messages
+    socket.on('new-message', function(data) {
+      if (data && data.message) {
+        const existingMsg = document.querySelector(`[data-message-id="${data.message._id}"]`);
+        if (!existingMsg) {
+          addMessageToUI(data.message);
+          scrollToBottom();
+          
+          const messages = document.querySelectorAll('#messages-container > div');
+          if (messages.length > 0) {
+            const lastMessage = messages[messages.length - 1];
+            lastMessage.classList.add('new-message-highlight');
+            
+            setTimeout(() => {
+              lastMessage.classList.remove('new-message-highlight');
+            }, 1500);
+          }
+        }
+      }
+    });
+    
+    // Connection error handling
+    socket.on('connect_error', function(err) {
+      console.error('Socket connection error:', err);
+      socketConnected = false;
+      if (window.showToast) {
+        window.showToast('Connection error: ' + err.message, 'error');
+      }
+    });
+    
+    // Handle file inputs
+    const fileInput = document.getElementById('message-image');
+    const fileNameDisplay = document.getElementById('file-name');
+    
+    if (fileInput) {
+      fileInput.addEventListener('change', function() {
+        if (this.files.length > 0) {
+          fileNameDisplay.textContent = this.files[0].name;
+        } else {
+          fileNameDisplay.textContent = '';
+        }
+      });
+    }
+    
+    // Handle form submission
+    const messageForm = document.getElementById('ticket-message-form');
+    
+    if (messageForm) {
+      messageForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(this);
+        const messageContent = document.getElementById('message-content').value;
+        const messageImage = document.getElementById('message-image').files[0];
+        
+        if (!messageContent.trim() && !messageImage) {
+          if (window.showToast) {
+            window.showToast('Please enter a message or attach an image', 'warning');
+          }
+          return;
+        }
+        
+        // Determine the correct endpoint based on user role
+        const endpoint = <%= isEmployee %> 
+          ? '/admin/tickets/<%= ticket._id %>/message'
+          : '/tickets/<%= ticket._id %>/message';
+        
+        // Disable submit button while sending
+        const submitButton = this.querySelector('button[type="submit"]');
+        submitButton.disabled = true;
+        submitButton.innerHTML = 'Sending...';
+        
+        // Send message to server
+        fetch(endpoint, {
+          method: 'POST',
+          body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+          submitButton.disabled = false;
+          submitButton.innerHTML = 'Send Message';
+          
+          if (data.success) {
+            document.getElementById('message-content').value = '';
+            document.getElementById('message-image').value = '';
+            fileNameDisplay.textContent = '';
+            
+            if (!socketConnected && data.message) {
+              addMessageToUI(data.message);
+              scrollToBottom();
+            }
+          } else {
+            showError('Error sending message: ' + data.message);
+          }
+        })
+        .catch(error => {
+          submitButton.disabled = false;
+          submitButton.innerHTML = 'Send Message';
+          console.error('Error sending message:', error);
+          showError('An error occurred while sending the message');
+        });
+      });
+    }
+    
+    // Helper function to add a message to the UI
+    function addMessageToUI(message) {
+      const messagesContainer = document.getElementById('messages-container');
+      if (!messagesContainer) return;
+      
+      const senderId = String(message.sender._id).replace(/"/g, '').trim();
+      const currentUserId = String('<%= user.id %>').replace(/"/g, '').trim();
+      
+      const isOwnMessage = senderId === currentUserId;
+      
+      const messageDiv = document.createElement('div');
+      messageDiv.className = `flex ${isOwnMessage ? 'flex-row-reverse' : 'flex-row'} items-start gap-3 mb-4`;
+      messageDiv.setAttribute('data-message-id', message._id);
+      messageDiv.setAttribute('data-sender-id', senderId);
+      messageDiv.setAttribute('data-current-user-id', currentUserId);
+      messageDiv.setAttribute('data-is-own-message', isOwnMessage);
+      
+      const avatarHtml = message.sender.profileImage 
+        ? `<img src="${message.sender.profileImage}" alt="Avatar" class="w-full h-full object-cover">`
+        : `<div class="w-full h-full flex items-center justify-center text-sm font-medium text-gray-500 bg-gray-200">${message.sender.firstName.charAt(0).toUpperCase()}</div>`;
+      
+      messageDiv.innerHTML = `
+        <div class="${isOwnMessage ? 'bg-blue-100' : 'bg-gray-100'} message-bubble">
+          <div class="message-header">
+            <div class="message-avatar">
+              ${avatarHtml}
+            </div>
+            <span class="message-sender">
+              ${escapeHtml(message.sender.firstName)} ${escapeHtml(message.sender.lastName)}
+            </span>
+          </div>
+          
+          ${message.contentType === 'text' 
+            ? `<p class="text-gray-800 whitespace-pre-wrap">${escapeHtml(message.content)}</p>` 
+            : `<div class="mt-2"><img src="${message.fileUrl}" alt="Uploaded image" class="max-w-full rounded-md max-h-64"></div>`}
+          
+          <div class="message-timestamp">
+            ${new Date(message.createdAt).toLocaleString()}
+          </div>
+        </div>
+      `;
+      
+      messagesContainer.appendChild(messageDiv);
+    }
+    
+    // Helper functions
+    function escapeHtml(text) {
+      if (!text) return '';
+      const map = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#039;'
+      };
+      return text.replace(/[&<>"']/g, function(m) { return map[m]; });
+    }
+    
+    function showError(message) {
+      if (window.showToast) {
+        window.showToast(message, 'error');
+      } else {
+        alert(message);
+      }
+    }
+    
+    function scrollToBottom() {
+      const messagesContainer = document.getElementById('messages-container');
+      if (messagesContainer) {
+        messagesContainer.scrollTo({
+          top: messagesContainer.scrollHeight,
+          behavior: 'smooth'
+        });
+      }
+    }
+    
+    // Calculate available height for the message container
+    function calculateMessageContainerHeight() {
+      // Get the navbar height
+      const navbar = document.querySelector('header');
+      const navbarHeight = navbar ? navbar.offsetHeight : 0;
+      
+      // Get footer height if it exists
+      const footer = document.querySelector('footer');
+      const footerHeight = footer ? footer.offsetHeight : 0;
+      
+      // Get main element's padding
+      const main = document.querySelector('main');
+      const mainStyle = main ? getComputedStyle(main) : { paddingTop: '0px', paddingBottom: '0px' };
+      const mainPaddingY = parseInt(mainStyle.paddingTop) + parseInt(mainStyle.paddingBottom);
+      
+      // Calculate available height
+      const viewportHeight = window.innerHeight;
+      const messageContainerHeight = viewportHeight - navbarHeight - footerHeight - mainPaddingY;
+      
+      // Apply the height
+      const messageContainer = document.getElementById('message-page-container');
+      if (messageContainer) {
+        messageContainer.style.height = `${messageContainerHeight}px`;
+        console.log(`Set message container height to ${messageContainerHeight}px`);
+        console.log(`- Viewport height: ${viewportHeight}px`);
+        console.log(`- Navbar height: ${navbarHeight}px`);
+        console.log(`- Footer height: ${footerHeight}px`);
+        console.log(`- Main padding: ${mainPaddingY}px`);
+      }
+      
+      // Scroll messages to bottom after height change
+      scrollToBottom();
+    }
+
+    // Call once at start and on window resize
+    calculateMessageContainerHeight();
+    window.addEventListener('resize', calculateMessageContainerHeight);
+    
+    // Initial scroll to bottom
+    scrollToBottom();
+    
+    // Auto-scroll on new messages
+    const messagesContainer = document.getElementById('messages-container');
+    if (messagesContainer) {
+      const observer = new MutationObserver(mutations => {
+        mutations.forEach(mutation => {
+          if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
+            scrollToBottom();
+          }
+        });
+      });
+      
+      observer.observe(messagesContainer, { childList: true });
+    }
+    
+    // Clean up on page exit
+    window.addEventListener('beforeunload', function() {
+      if (socketConnected) {
+        socket.emit('leave-ticket', ticketId);
+      }
+    });
+  });
+</script>
