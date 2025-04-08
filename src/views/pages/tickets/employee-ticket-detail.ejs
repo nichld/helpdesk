@@ -1,6 +1,6 @@
 <div class="ticket-container">
   <!-- Back button -->
-  <div class="ticket-header mb-2">
+  <div class="ticket-header mb-4">
     <div class="flex justify-between items-center">
       <a href="/admin/tickets" class="inline-flex items-center text-sm text-blue-600 hover:text-blue-800">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -9,112 +9,186 @@
         Back to tickets
       </a>
       
-      <button id="toggle-metadata-btn" class="toggle-metadata-btn">
-        Ticket Details
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 ml-1" viewBox="0 0 20 20" fill="currentColor">
-          <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
-        </svg>
-      </button>
-    </div>
-  </div>
-  
-  <!-- Ticket metadata section (collapsible) -->
-  <div id="ticket-metadata" class="ticket-metadata bg-white border border-gray-200 rounded-lg p-6 mb-4">
-    <div class="flex flex-col md:flex-row md:justify-between md:items-start gap-4">
+      <!-- Status badge moved to right -->
       <div>
-        <div class="flex items-center gap-3 mb-2">
-          <h1 class="text-2xl font-bold text-gray-900"><%= ticket.title %></h1>
-          
-          <% if (ticket.status === 'open') { %>
-            <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
-              Open
-            </span>
-          <% } else if (ticket.status === 'in-progress') { %>
-            <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
-              In Progress
-            </span>
-          <% } else if (ticket.status === 'solved') { %>
-            <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-              Solved
-            </span>
-          <% } else if (ticket.status === 'closed') { %>
-            <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-800 text-white">
-              Closed
-            </span>
-          <% } %>
-        </div>
-        
-        <p class="text-gray-600 mb-4"><%= ticket.description %></p>
-        
-        <div class="grid grid-cols-2 sm:grid-cols-3 gap-y-4 gap-x-8">
-          <div>
-            <p class="text-xs text-gray-500">Category</p>
-            <p class="font-medium"><%= ticket.category %></p>
-          </div>
-          
-          <div>
-            <p class="text-xs text-gray-500">Priority</p>
-            <p class="font-medium">
-              <% if (!ticket.priority) { %>
-                N/A
-              <% } else if (ticket.priority === 'low') { %>
-                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">Low</span>
-              <% } else if (ticket.priority === 'medium') { %>
-                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800">Medium</span>
-              <% } else if (ticket.priority === 'high') { %>
-                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-orange-100 text-orange-800">High</span>
-              <% } else if (ticket.priority === 'critical') { %>
-                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800">Critical</span>
-              <% } %>
-            </p>
-          </div>
-          
-          <div>
-            <p class="text-xs text-gray-500">Assigned To</p>
-            <p class="font-medium" data-field="assignedTo">
-              <% if (ticket.assignedTo) { %>
-                <%= ticket.assignedTo.firstName %> <%= ticket.assignedTo.lastName %>
-              <% } else { %>
-                N/A
-              <% } %>
-            </p>
-          </div>
-          
-          <div>
-            <p class="text-xs text-gray-500">Customer</p>
-            <p class="font-medium"><%= ticket.customer.firstName %> <%= ticket.customer.lastName %></p>
-          </div>
-          
-          <div>
-            <p class="text-xs text-gray-500">Created</p>
-            <p class="font-medium"><%= new Date(ticket.createdAt).toLocaleDateString() %></p>
-          </div>
-          
-          <div>
-            <p class="text-xs text-gray-500">Last Activity</p>
-            <p class="font-medium"><%= new Date(ticket.lastActivity).toLocaleString() %></p>
-          </div>
-        </div>
+        <% if (ticket.status === 'open') { %>
+          <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
+            Open
+          </span>
+        <% } else if (ticket.status === 'in-progress') { %>
+          <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+            In Progress
+          </span>
+        <% } else if (ticket.status === 'solved') { %>
+          <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+            Solved
+          </span>
+        <% } else if (ticket.status === 'closed') { %>
+          <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-800 text-white">
+            Closed
+          </span>
+        <% } %>
       </div>
     </div>
   </div>
   
-  <!-- Messages section - preview only -->
-  <div class="bg-white border border-gray-200 rounded-lg p-6">
-    <div class="flex justify-between items-center mb-4">
-      <h2 class="text-xl font-semibold">Messages</h2>
-      
-      <a href="/admin/tickets/<%= ticket._id %>/messages" 
-         class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium flex items-center"
-         target="_blank">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
-          <path fill-rule="evenodd" d="M18 10c0 3.866-3.582 7-8 7a8.841 8.841 0 01-4.083-.98L2 17l1.338-3.123C2.493 12.767 2 11.434 2 10c0-3.866 3.582-7 8-7s8 3.134 8 7zM7 9H5v2h2V9zm8 0h-2v2h2V9zM9 9h2v2H9V9z" clip-rule="evenodd" />
-        </svg>
-        View Messages
-      </a>
+  <!-- Combined ticket metadata and actions section -->
+  <div class="bg-white border border-gray-200 rounded-lg p-6 mb-6">
+    <div class="flex items-center gap-3 mb-4">
+      <h1 class="text-2xl font-bold text-gray-900"><%= ticket.title %></h1>
     </div>
     
-    <div class="border rounded-lg p-4 bg-gray-50">
+    <p class="text-gray-600 mb-6"><%= ticket.description %></p>
+    
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <!-- Left column with ticket details -->
+      <div class="grid grid-cols-2 gap-y-4 gap-x-8">
+        <div>
+          <p class="text-xs text-gray-500">Category</p>
+          <p class="font-medium"><%= ticket.category %></p>
+        </div>
+        
+        <div>
+          <p class="text-xs text-gray-500">Priority</p>
+          <p class="font-medium" data-field="priority">
+            <% if (!ticket.priority) { %>
+              N/A
+            <% } else if (ticket.priority === 'low') { %>
+              <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">Low</span>
+            <% } else if (ticket.priority === 'medium') { %>
+              <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800">Medium</span>
+            <% } else if (ticket.priority === 'high') { %>
+              <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-orange-100 text-orange-800">High</span>
+            <% } else if (ticket.priority === 'critical') { %>
+              <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800">Critical</span>
+            <% } %>
+          </p>
+        </div>
+        
+        <div>
+          <p class="text-xs text-gray-500">Assigned To</p>
+          <p class="font-medium" data-field="assignedTo">
+            <% if (ticket.assignedTo) { %>
+              <%= ticket.assignedTo.firstName %> <%= ticket.assignedTo.lastName %>
+            <% } else { %>
+              N/A
+            <% } %>
+          </p>
+        </div>
+        
+        <div>
+          <p class="text-xs text-gray-500">Customer</p>
+          <p class="font-medium"><%= ticket.customer.firstName %> <%= ticket.customer.lastName %></p>
+        </div>
+        
+        <div>
+          <p class="text-xs text-gray-500">Created</p>
+          <p class="font-medium"><%= new Date(ticket.createdAt).toLocaleDateString() %></p>
+        </div>
+        
+        <div>
+          <p class="text-xs text-gray-500">Last Activity</p>
+          <p class="font-medium"><%= new Date(ticket.lastActivity).toLocaleString() %></p>
+        </div>
+      </div>
+    
+      <!-- Right column with employee actions -->
+      <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+        <h3 class="font-medium text-gray-700 mb-3">Ticket Actions</h3>
+        
+        <form id="ticket-actions-form" class="space-y-4">
+          <!-- Status selection -->
+          <div>
+            <label for="status" class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+            <select id="status" name="status" class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <option value="open" <%= ticket.status === 'open' ? 'selected' : '' %>>Open</option>
+              <option value="in-progress" <%= ticket.status === 'in-progress' ? 'selected' : '' %>>In Progress</option>
+              <option value="solved" <%= ticket.status === 'solved' ? 'selected' : '' %>>Solved</option>
+              <option value="closed" <%= ticket.status === 'closed' ? 'selected' : '' %>>Closed</option>
+            </select>
+          </div>
+          
+          <!-- Priority selection -->
+          <div>
+            <label for="priority" class="block text-sm font-medium text-gray-700 mb-1">Priority</label>
+            <select id="priority" name="priority" class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <option value="">Not set</option>
+              <option value="low" <%= ticket.priority === 'low' ? 'selected' : '' %>>Low</option>
+              <option value="medium" <%= ticket.priority === 'medium' ? 'selected' : '' %>>Medium</option>
+              <option value="high" <%= ticket.priority === 'high' ? 'selected' : '' %>>High</option>
+              <option value="critical" <%= ticket.priority === 'critical' ? 'selected' : '' %>>Critical</option>
+            </select>
+          </div>
+          
+          <!-- Category selection -->
+          <div>
+            <label for="category" class="block text-sm font-medium text-gray-700 mb-1">Category</label>
+            <select id="category" name="category" class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <option value="general" <%= ticket.category === 'general' ? 'selected' : '' %>>General</option>
+              <option value="technical" <%= ticket.category === 'technical' ? 'selected' : '' %>>Technical</option>
+              <option value="billing" <%= ticket.category === 'billing' ? 'selected' : '' %>>Billing</option>
+              <option value="feature" <%= ticket.category === 'feature' ? 'selected' : '' %>>Feature Request</option>
+              <option value="bug" <%= ticket.category === 'bug' ? 'selected' : '' %>>Bug Report</option>
+            </select>
+          </div>
+          
+          <!-- Assignment options -->
+          <div>
+            <label class="block text-sm text-gray-600 mb-1">Assign to</label>
+            <div class="space-y-2">
+              <% if (!ticket.assignedTo || ticket.assignedTo._id.toString() !== user.id) { %>
+                <button 
+                  type="button" 
+                  data-action="assignToMe"
+                  class="w-full flex items-center justify-center px-3 py-2 bg-blue-50 text-blue-700 border border-blue-200 rounded-md hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition duration-150"
+                >
+                  Assign to me
+                </button>
+              <% } %>
+              
+              <% if (ticket.assignedTo) { %>
+                <button 
+                  type="button" 
+                  data-action="unassign"
+                  class="w-full flex items-center justify-center px-3 py-2 bg-gray-50 text-gray-700 border border-gray-200 rounded-md hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-opacity-50 transition duration-150"
+                >
+                  Unassign ticket
+                </button>
+              <% } %>
+            </div>
+          </div>
+          
+          <button 
+            type="submit" 
+            class="w-full flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-150"
+          >
+            Save Changes
+          </button>
+        </form>
+        
+        <div id="save-status" class="mt-3 text-sm"></div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Messages section -->
+  <div class="bg-white border border-gray-200 rounded-lg mb-6">
+    <div class="p-6 border-b border-gray-200">
+      <div class="flex justify-between items-center">
+        <h2 class="text-xl font-semibold">Messages</h2>
+        
+        <a href="/admin/tickets/<%= ticket._id %>/messages" 
+           class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium flex items-center transition duration-150"
+           target="_blank">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M18 10c0 3.866-3.582 7-8 7a8.841 8.841 0 01-4.083-.98L2 17l1.338-3.123C2.493 12.767 2 11.434 2 10c0-3.866 3.582-7 8-7s8 3.134 8 7zM7 9H5v2h2V9zm8 0h-2v2h2V9zM9 9h2v2H9V9z" clip-rule="evenodd" />
+          </svg>
+          View Messages
+        </a>
+      </div>
+    </div>
+    
+    <div class="p-6">
       <% if (messages && messages.length > 0) { %>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
           <div>
@@ -152,12 +226,8 @@
                   </p>
                   <% if (message.sender.role === 'customer') { %>
                     <span class="ml-2 inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">Customer</span>
-                  <% } else if (message.sender.role === 'employee') { %>
-                    <span class="ml-2 inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">Staff</span>
-                  <% } else if (message.sender.role === 'admin') { %>
-                    <span class="ml-2 inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">Admin</span>
                   <% } %>
-                  <span class="ml-2 text-xs text-gray-500">
+                  <span class="ml-auto text-xs text-gray-500">
                     <%= new Date(message.createdAt).toLocaleString() %>
                   </span>
                 </div>
@@ -199,26 +269,105 @@
 
 <script>
   document.addEventListener('DOMContentLoaded', function() {
-    // Toggle metadata functionality
-    const toggleBtn = document.getElementById('toggle-metadata-btn');
-    const metadataSection = document.getElementById('ticket-metadata');
+    // Update ticket form
+    const form = document.getElementById('ticket-actions-form');
     
-    if (toggleBtn && metadataSection) {
-      toggleBtn.addEventListener('click', function() {
-        metadataSection.classList.toggle('collapsed');
-        toggleBtn.classList.toggle('collapsed');
-        
-        // Store preference in localStorage
-        const isCollapsed = metadataSection.classList.contains('collapsed');
-        localStorage.setItem('ticket-metadata-collapsed', isCollapsed);
-      });
-      
-      // Check for saved preference
-      const savedPreference = localStorage.getItem('ticket-metadata-collapsed');
-      if (savedPreference === 'true') {
-        metadataSection.classList.add('collapsed');
-        toggleBtn.classList.add('collapsed');
+    if (form) {
+      // Handle assign to me button
+      const assignButton = document.querySelector('[data-action="assignToMe"]');
+      if (assignButton) {
+        assignButton.addEventListener('click', function() {
+          saveTicketChanges({ assignTo: 'me' });
+        });
       }
+      
+      // Handle unassign button
+      const unassignButton = document.querySelector('[data-action="unassign"]');
+      if (unassignButton) {
+        unassignButton.addEventListener('click', function() {
+          saveTicketChanges({ assignTo: 'none' });
+        });
+      }
+      
+      // Handle form submission
+      form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        // Get form values
+        const status = document.getElementById('status').value;
+        const priority = document.getElementById('priority').value;
+        const category = document.getElementById('category').value;
+        
+        saveTicketChanges({ status, priority, category });
+      });
+    }
+    
+    // Function to save ticket changes
+    function saveTicketChanges(data) {
+      const saveStatus = document.getElementById('save-status');
+      saveStatus.textContent = 'Saving changes...';
+      saveStatus.className = 'mt-3 text-sm text-blue-600';
+      
+      fetch('/admin/tickets/<%= ticket._id %>/update', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data)
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          saveStatus.textContent = 'Changes saved successfully!';
+          saveStatus.className = 'mt-3 text-sm text-green-600';
+          
+          // Update UI with new values
+          updateTicketUI(data.ticket);
+          
+          // Clear success message after 3 seconds
+          setTimeout(() => {
+            saveStatus.textContent = '';
+          }, 3000);
+        } else {
+          saveStatus.textContent = 'Error: ' + data.message;
+          saveStatus.className = 'mt-3 text-sm text-red-600';
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        saveStatus.textContent = 'An error occurred while saving changes';
+        saveStatus.className = 'mt-3 text-sm text-red-600';
+      });
+    }
+    
+    // Function to update ticket UI after changes
+    function updateTicketUI(ticket) {
+      // Update status display
+      const status = document.getElementById('status');
+      if (status) status.value = ticket.status;
+      
+      // Update priority display
+      const priority = document.getElementById('priority');
+      if (priority) priority.value = ticket.priority || '';
+      
+      // Update category display
+      const category = document.getElementById('category');
+      if (category) category.value = ticket.category;
+      
+      // Update assigned to field
+      const assignedToField = document.querySelector('[data-field="assignedTo"]');
+      if (assignedToField) {
+        if (ticket.assignedTo) {
+          assignedToField.textContent = `${ticket.assignedTo.firstName} ${ticket.assignedTo.lastName}`;
+        } else {
+          assignedToField.textContent = 'N/A';
+        }
+      }
+      
+      // Reload the page to reflect all changes correctly, especially for assignment actions
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
     }
   });
 </script>

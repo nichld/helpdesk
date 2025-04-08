@@ -72,29 +72,16 @@
   display: block;
 }
 
-/* Ticket container layout styles */
+/* Updated ticket container styles - allow full scrolling */
 .ticket-container {
   display: flex;
   flex-direction: column;
-  height: calc(100vh - 4rem); /* Adjust height to account for navbar */
-  max-height: calc(100vh - 4rem);
-  overflow: hidden;
+  width: 100%;
+  overflow: visible; /* Allow content to overflow naturally */
 }
 
 .ticket-header {
-  flex-shrink: 0;
-}
-
-.ticket-metadata {
-  transition: max-height 0.3s ease-in-out, opacity 0.3s ease-in-out;
-  overflow: hidden;
-}
-
-.ticket-metadata.collapsed {
-  max-height: 0 !important;
-  opacity: 0;
-  margin: 0;
-  padding: 0;
+  margin-bottom: 1rem;
 }
 
 .chat-container {
@@ -186,4 +173,19 @@
   padding: 1rem;
   border-top: 1px solid #e5e7eb;
   background: white;
+}
+
+/* Consistent styling for select elements */
+select {
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E");
+  background-position: right 0.5rem center;
+  background-repeat: no-repeat;
+  background-size: 1.5em 1.5em;
+  padding-right: 2.5rem;
+}
+
+/* Add transition for smoother focus effects */
+select, button, input, textarea {
+  transition: border-color 150ms ease-in-out, box-shadow 150ms ease-in-out;
 }
