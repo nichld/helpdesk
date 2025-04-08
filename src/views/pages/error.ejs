@@ -1,0 +1,19 @@
+<div class="flex flex-col items-center justify-center py-12">
+  <div class="text-center">
+    <h1 class="text-4xl font-bold text-gray-900 mb-4">
+      <%= error.status %> - <%= title %>
+    </h1>
+    <p class="text-xl text-gray-600 mb-8">
+      <%= message %>
+    </p>
+    <a href="/" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors duration-200">
+      Return Home
+    </a>
+  </div>
+  
+  <% if (process.env.NODE_ENV !== 'production' && error.stack) { %>
+    <div class="mt-8 p-4 bg-gray-100 rounded-lg w-full max-w-xl overflow-auto">
+      <pre class="text-xs text-gray-800"><%= error.stack %></pre>
+    </div>
+  <% } %>
+</div>

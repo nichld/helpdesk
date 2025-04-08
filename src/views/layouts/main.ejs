@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><% if (typeof title !== 'undefined') { %><%= title %><% } else { %>Drift Guides<% } %></title>
+  <% if (typeof style !== 'undefined') { %>
+    <%- style %>
+  <% } %>
+  
+  <script src="https://unpkg.com/@tailwindcss/browser@4"></script>
+</head>
+<body class="bg-white h-[100dvh] flex flex-col justify-between">
+  
+  <header class="sticky top-0 z-10">
+    <%- include('../partials/navbar') %>
+  </header>
+
+  <% if (typeof message !== 'undefined' && message) { %>
+    <%- include('../partials/popup', { message: message }) %>
+  <% } %>
+
+  <main class="max-w-[1000px] p-4 md:p-8 lg:p-12 py-8 md:py-12 w-full mb-auto mx-auto">
+    <%- body %>
+  </main>
+  
+  <%- include('../partials/footer') %>
+  
+  <% if (typeof script !== 'undefined') { %>
+    <%- script %>
+  <% } %>
+  <script src="/js/popup.js"></script>
+  <script src="/js/editor.js"></script>
+</body>
+</html>

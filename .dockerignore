@@ -1,0 +1,42 @@
+# Node.js specific patterns
+node_modules/
+npm-debug.log
+yarn-debug.log
+
+# Development artifacts
+.idea/
+.vscode/
+*.swp
+*.swo
+dist/
+build/
+out/
+test/
+tests/
+debug/
+*.log
+
+# Version control
+.git/
+.gitignore
+
+# Environment and secrets
+.env*
+*.env
+*.pem
+*.key
+*.crt
+config.local.*
+*.local.yml
+
+# Project-specific patterns
+docs/
+*.md
+README*
+Dockerfile*
+docker-compose*
+tmp/
+temp/
+*.tmp
+.local/
+local/
