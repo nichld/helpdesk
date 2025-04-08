@@ -1,6 +1,5 @@
 const express = require('express');
 const dotenv = require('dotenv');
-const path = require('path');
 const router = require('./routes/router');
 const { configureExpress } = require('./config/express');
 const { configureSession } = require('./config/session');
@@ -22,9 +21,6 @@ app.use(configureSession());
 
 // Apply the attachUser middleware AFTER session middleware but BEFORE routes
 app.use(setCurrentUser);
-
-// Serve uploaded files
-app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // Use the router which includes all routes and error handling
 app.use("/", router);

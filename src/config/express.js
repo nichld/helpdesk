@@ -17,6 +17,9 @@ exports.configureExpress = (app) => {
   // Static files
   app.use(express.static(path.join(__dirname, "../public")));
   
+  // Serve uploaded files
+  app.use('/uploads', express.static(path.join(__dirname, "../../uploads")));
+  
   // Parse request bodies
   app.use(express.urlencoded({ extended: false }));
   app.use(express.json());
