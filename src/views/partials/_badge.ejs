@@ -1,0 +1,85 @@
+<%
+/**
+ * Reusable badge component
+ * @param {string} text - The badge text
+ * @param {string} type - The badge type (determines color)
+ * @param {string} size - The badge size (xs, sm, md)
+ * @param {string} classes - Additional classes for the badge
+ */
+
+// Set default values
+text = typeof text !== 'undefined' ? text : '';
+type = typeof type !== 'undefined' ? type : 'default';
+size = typeof size !== 'undefined' ? size : 'xs';
+classes = typeof classes !== 'undefined' ? classes : '';
+
+// Set styles based on type
+let bgColor, textColor;
+
+switch(type) {
+  case 'admin':
+    bgColor = 'bg-red-100';
+    textColor = 'text-red-800';
+    break;
+  case 'employee':
+    bgColor = 'bg-purple-100';
+    textColor = 'text-purple-800';
+    break;
+  case 'it-employee':
+    bgColor = 'bg-indigo-100';
+    textColor = 'text-indigo-800';
+    break;
+  case 'support-employee':
+    bgColor = 'bg-teal-100';
+    textColor = 'text-teal-800';
+    break;
+  case 'customer':
+    bgColor = 'bg-blue-100';
+    textColor = 'text-blue-800';
+    break;
+  case 'pending':
+    bgColor = 'bg-yellow-100';
+    textColor = 'text-yellow-800';
+    break;
+  case 'approved':
+    bgColor = 'bg-green-100';
+    textColor = 'text-green-800';
+    break;
+  case 'open':
+    bgColor = 'bg-yellow-100';
+    textColor = 'text-yellow-800';
+    break;
+  case 'in-progress':
+    bgColor = 'bg-blue-100';
+    textColor = 'text-blue-800';
+    break;
+  case 'solved':
+    bgColor = 'bg-green-100';
+    textColor = 'text-green-800';
+    break;
+  case 'closed':
+    bgColor = 'bg-gray-800';
+    textColor = 'text-white';
+    break;
+  default:
+    bgColor = 'bg-gray-100';
+    textColor = 'text-gray-800';
+}
+
+// Set size classes
+let sizeClass;
+switch(size) {
+  case 'sm':
+    sizeClass = 'px-2.5 py-0.5 text-sm';
+    break;
+  case 'md':
+    sizeClass = 'px-3 py-1 text-sm';
+    break;
+  default: // xs
+    sizeClass = 'px-2 py-0.5 text-xs';
+}
+%>
+
+<span class="inline-flex items-center <%= sizeClass %> leading-5 font-semibold rounded-full <%= bgColor %> <%= textColor %> <%= classes %>">
+  <%= text %>
+</span>
