@@ -20,19 +20,21 @@ jobs:
       SOCKET_TIMEOUT: ${{ secrets.SOCKET_TIMEOUT }}
 
     steps:
-      - name: Checkout code
+      - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Install dependencies
-        run: |
-          export PATH=$PATH:/home/nichld/.npm-global/bin
-          npm install
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
 
-      - name: Build
+      - name: Install Dependencies
+        run: npm install
+
+      - name: Build Project
         run: npm run build
 
-      - name: Start app
+      - name: Deploy Application
         run: |
-          export PATH=$PATH:/home/nichld/.npm-global/bin
           pm2 delete helpdesk || true
-          pm2 start npm --name helpdesk -- start
+          pm2 start npm --name "helpdesk" -- start
