@@ -24,12 +24,15 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install dependencies
-        run: npm install
+        run: |
+          export PATH=$PATH:/home/nichld/.npm-global/bin
+          npm install
 
       - name: Build
         run: npm run build
 
       - name: Start app
         run: |
-          $(which pm2) delete helpdesk || true
-          $(which pm2) start npm --name helpdesk -- start
+          export PATH=$PATH:/home/nichld/.npm-global/bin
+          pm2 delete helpdesk || true
+          pm2 start npm --name helpdesk -- start
