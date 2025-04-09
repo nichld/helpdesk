@@ -29,8 +29,12 @@ const UserSchema = new mongoose.Schema({
   },
   role: {
     type: String,
-    enum: ['customer', 'employee', 'admin'],
+    enum: ['customer', 'employee', 'it-employee', 'support-employee', 'admin'],
     default: 'customer'
+  },
+  approved: {
+    type: Boolean,
+    default: false
   },
   profileImage: {
     type: String,

@@ -26,6 +26,15 @@ exports.authenticateUser = async (email, password) => {
       return { success: false, message: 'Invalid email or password.' };
     }
     
+    // Check if customer is approved (for employees and admins, always allow)
+    if (user.role === 'customer' && !user.approved) {
+      return {
+        success: true,
+        user,
+        requiresApproval: true
+      };
+    }
+    
     return { 
       success: true, 
       user
@@ -64,12 +73,14 @@ exports.registerUser = async (firstName, lastName, email, password) => {
       lastName,
       email,
       password,
-      role: 'customer' // Default role for new registrations
+      role: 'customer', // Default role for new registrations
+      approved: false // New users require approval
     });
     
     return { 
       success: true, 
-      user
+      user,
+      requiresApproval: true
     };
   } catch (error) {
     console.error('Registration error:', error);
@@ -111,7 +122,8 @@ exports.createAdminIfNotExists = async () => {
           lastName: defaultLastName,
           email: `${role}@${defaultDomain}`,
           password: defaultPassword,
-          role: role
+          role: role,
+          approved: true // Default users are approved
         });
         console.log(`Default ${role} user created: ${defaultFirstName} ${defaultLastName} (${role}@${defaultDomain})`);
       }
@@ -189,15 +201,44 @@ exports.updateUserProfile = async (userId, updateData, currentPassword) => {
 };
 
 /**
+ * Updates a user's approval status
+ * @param {string} userId - ID of user to update
+ * @param {boolean} approved - New approval status
+ * @returns {Object} Update result
+ */
+exports.updateUserApproval = async (userId) => {
+  try {
+    const user = await User.findById(userId);
+    
+    if (!user) {
+      return { success: false, message: 'User not found.' };
+    }
+    
+    // Toggle approval status
+    user.approved = !user.approved;
+    await user.save();
+    
+    return {
+      success: true,
+      user: await User.findById(userId).select('-password')
+    };
+  } catch (error) {
+    console.error('Approval update error:', error);
+    return { success: false, message: 'An error occurred while updating the approval status.' };
+  }
+};
+
+/**
  * Updates a user's role (admin only)
  * @param {string} userId - ID of user to update
- * @param {string} role - New role ('customer', 'employee', or 'admin')
+ * @param {string} role - New role ('customer', 'employee', 'it-employee', 'support-employee', 'admin')
  * @param {string} currentUserId - ID of the admin performing the change
  * @returns {Object} Update result
  */
 exports.updateUserRole = async (userId, role, currentUserId) => {
   try {
-    if (!['customer', 'employee', 'admin'].includes(role)) {
+    const validRoles = ['customer', 'employee', 'it-employee', 'support-employee', 'admin'];
+    if (!validRoles.includes(role)) {
       return { success: false, message: 'Invalid role.' };
     }
     
@@ -212,11 +253,6 @@ exports.updateUserRole = async (userId, role, currentUserId) => {
       return { success: false, message: 'User not found.' };
     }
     
-    // Prevent changing role of other admin users
-    if (user.role === 'admin') {
-      return { success: false, message: 'Admin roles cannot be modified for security reasons.' };
-    }
-    
     user.role = role;
     await user.save();
     
@@ -227,5 +263,49 @@ exports.updateUserRole = async (userId, role, currentUserId) => {
   } catch (error) {
     console.error('Role update error:', error);
     return { success: false, message: 'An error occurred while updating the role.' };
+  }
+};
+
+/**
+ * Deletes a user (admin only)
+ * @param {string} userId - ID of user to delete
+ * @param {string} currentUserId - ID of the admin performing the action
+ * @returns {Object} Delete result
+ */
+exports.deleteUser = async (userId, currentUserId) => {
+  try {
+    if (userId === currentUserId) {
+      return { success: false, message: 'You cannot delete your own account.' };
+    }
+    
+    const user = await User.findById(userId);
+    
+    if (!user) {
+      return { success: false, message: 'User not found.' };
+    }
+    
+    // Check if user has any tickets before deletion
+    const Ticket = require('../models/Ticket');
+    const ticketCount = await Ticket.countDocuments({ 
+      $or: [{ customer: userId }, { assignedTo: userId }]
+    });
+    
+    if (ticketCount > 0) {
+      return { 
+        success: false, 
+        message: `Cannot delete user. User is associated with ${ticketCount} tickets.` 
+      };
+    }
+    
+    // Delete the user
+    await User.findByIdAndDelete(userId);
+    
+    return {
+      success: true,
+      message: 'User successfully deleted.'
+    };
+  } catch (error) {
+    console.error('User deletion error:', error);
+    return { success: false, message: 'An error occurred while deleting the user.' };
   }
 };

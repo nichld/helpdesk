@@ -38,8 +38,14 @@ exports.login = async (req, res) => {
         lastName: result.user.lastName,
         email: result.user.email,
         role: result.user.role,
+        approved: result.user.approved,
         profileImage: result.user.profileImage
       };
+      
+      // If customer needs approval, redirect to waiting page
+      if (result.requiresApproval) {
+        return res.redirect('/waiting-approval');
+      }
       
       // Check if there's a return URL saved in the session
       const returnTo = req.session.returnTo || '/profile';
@@ -60,6 +66,24 @@ exports.login = async (req, res) => {
       email: req.body.email
     });
   }
+};
+
+/**
+ * Renders waiting for approval page
+ */
+exports.waitingApproval = (req, res) => {
+  // If user is not logged in or is already approved, redirect
+  if (!req.session.user) {
+    return res.redirect('/login');
+  }
+  
+  if (req.session.user.role !== 'customer' || req.session.user.approved) {
+    return res.redirect('/');
+  }
+  
+  res.render('auth/waiting-approval', {
+    title: 'Account Pending Approval'
+  });
 };
 
 /**
@@ -245,20 +269,67 @@ exports.uploadProfileImage = async (req, res) => {
  */
 exports.manageUsers = async (req, res) => {
   try {
-    const users = await User.find().select('-password').sort('lastName firstName');
+    const { search, role, status } = req.query;
+    
+    // Build query object for filtering
+    let query = {};
+    
+    // Apply search filter (looks for matches in firstName, lastName, or email)
+    if (search) {
+      const searchRegex = new RegExp(search, 'i');
+      query.$or = [
+        { firstName: searchRegex },
+        { lastName: searchRegex },
+        { email: searchRegex }
+      ];
+    }
+    
+    // Apply role filter
+    if (role && role !== 'all') {
+      query.role = role;
+    }
+    
+    // Apply status filter (only for customers)
+    if (status && status !== 'all') {
+      if (role === 'all' || role === 'customer') {
+        // If filtering specifically for customer role or all roles
+        if (status === 'approved') {
+          query.approved = true;
+          // Ensure we're only looking at customers when filtering by approval status
+          if (role === 'all') query.role = 'customer';
+        } else if (status === 'pending') {
+          query.approved = false;
+          // Ensure we're only looking at customers when filtering by approval status
+          if (role === 'all') query.role = 'customer';
+        }
+      }
+    }
+    
+    // Get filtered users
+    const users = await User.find(query).sort('firstName');
     
     res.render('auth/users', {
       title: 'User Management',
-      users: users
+      users,
+      filters: {
+        search: search || '',
+        role: role || 'all',
+        status: status || 'all'
+      },
+      error: req.query.error || null,
+      success: req.query.success || null
     });
   } catch (error) {
-    res.status(500).render('error', {
-      title: 'Error',
-      message: 'Failed to load users',
-      error: {
-        status: 500,
-        stack: process.env.NODE_ENV === 'production' ? '' : error.stack
-      }
+    console.error('Error fetching users:', error);
+    res.render('auth/users', {
+      title: 'User Management',
+      users: [],
+      filters: {
+        search: '',
+        role: 'all',
+        status: 'all'
+      },
+      error: 'Failed to load users.'
     });
   }
 };
@@ -269,33 +340,104 @@ exports.manageUsers = async (req, res) => {
 exports.updateUserRole = async (req, res) => {
   try {
     const { userId, role } = req.body;
-    const currentUserId = req.session.user.id; // Get the current admin's ID
     
-    if (!['customer', 'employee', 'admin'].includes(role)) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Invalid role specified' 
+    if (!userId || !role) {
+      return res.render('auth/users', {
+        title: 'User Management',
+        error: 'User ID and role are required',
+        users: await User.find().sort('firstName')
       });
     }
     
-    const result = await authService.updateUserRole(userId, role, currentUserId);
+    const result = await authService.updateUserRole(userId, role, req.session.user.id);
     
     if (result.success) {
-      return res.status(200).json({ 
-        success: true, 
-        user: result.user 
-      });
+      return res.redirect('/users?success=Role updated successfully');
     } else {
-      return res.status(400).json({ 
-        success: false, 
-        message: result.message 
+      return res.render('auth/users', {
+        title: 'User Management',
+        error: result.message,
+        users: await User.find().sort('firstName')
       });
     }
   } catch (error) {
     console.error('Error updating user role:', error);
-    return res.status(500).json({ 
-      success: false, 
-      message: 'An error occurred while updating user role' 
+    res.render('auth/users', {
+      title: 'User Management',
+      error: 'An error occurred while updating the user role',
+      users: await User.find().sort('firstName')
+    });
+  }
+};
+
+/**
+ * Updates a user's approval status (admin only)
+ */
+exports.updateUserApproval = async (req, res) => {
+  try {
+    const { userId } = req.body;
+    
+    if (!userId) {
+      return res.render('auth/users', {
+        title: 'User Management',
+        error: 'User ID is required',
+        users: await User.find().sort('firstName')
+      });
+    }
+    
+    const result = await authService.updateUserApproval(userId);
+    
+    if (result.success) {
+      return res.redirect('/users?success=User approval status updated');
+    } else {
+      return res.render('auth/users', {
+        title: 'User Management',
+        error: result.message,
+        users: await User.find().sort('firstName')
+      });
+    }
+  } catch (error) {
+    console.error('Error updating user approval:', error);
+    res.render('auth/users', {
+      title: 'User Management',
+      error: 'An error occurred while updating user approval status',
+      users: await User.find().sort('firstName')
+    });
+  }
+};
+
+/**
+ * Deletes a user (admin only)
+ */
+exports.deleteUser = async (req, res) => {
+  try {
+    const { userId } = req.body;
+    
+    if (!userId) {
+      return res.render('auth/users', {
+        title: 'User Management',
+        error: 'User ID is required',
+        users: await User.find().sort('firstName')
+      });
+    }
+
+    const result = await authService.deleteUser(userId, req.session.user.id);
+    
+    if (result.success) {
+      return res.redirect('/users?success=' + encodeURIComponent(result.message));
+    } else {
+      return res.render('auth/users', {
+        title: 'User Management',
+        error: result.message,
+        users: await User.find().sort('firstName')
+      });
+    }
+  } catch (error) {
+    console.error('Error deleting user:', error);
+    res.render('auth/users', {
+      title: 'User Management',
+      error: 'An error occurred while deleting the user',
+      users: await User.find().sort('firstName')
     });
   }
 };

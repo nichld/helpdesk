@@ -11,9 +11,26 @@ exports.ensureAuthenticated = (req, res, next) => {
   console.log('Auth check - Session:', req.session.user ? `User ${req.session.user.id} (${req.session.user.role})` : 'No user in session');
   
   if (req.session.user) {
+    // Check if user is a customer and needs approval
+    if (req.session.user.role === 'customer' && !req.session.user.approved) {
+      // Allow access to the waiting for approval page
+      if (req.path === '/waiting-approval') {
+        return next();
+      }
+      
+      // Redirect to waiting for approval page if trying to access other pages
+      if (req.xhr || req.path.includes('/api/') || req.headers.accept && req.headers.accept.includes('application/json')) {
+        return res.status(403).json({
+          success: false,
+          message: 'Your account is pending approval'
+        });
+      }
+      return res.redirect('/waiting-approval');
+    }
+    
     return next();
   } else {
-    if (req.xhr || req.path.includes('/api/') || req.headers.accept.includes('application/json')) {
+    if (req.xhr || req.path.includes('/api/') || (req.headers.accept && req.headers.accept.includes('application/json'))) {
       return res.status(401).json({ 
         success: false,
         message: 'You need to be logged in to perform this action' 
@@ -43,12 +60,13 @@ exports.ensureAdmin = (req, res, next) => {
 };
 
 /**
- * Middleware to ensure user is an employee or admin
+ * Middleware to ensure user is an employee, IT employee, support employee, or admin
  */
 exports.ensureEmployee = (req, res, next) => {
   console.log('Employee check - Role:', req.session.user ? req.session.user.role : 'No user');
   
-  if (req.session.user && (req.session.user.role === 'employee' || req.session.user.role === 'admin')) {
+  const employeeRoles = ['employee', 'it-employee', 'support-employee', 'admin'];
+  if (req.session.user && employeeRoles.includes(req.session.user.role)) {
     return next();
   } else {
     if (req.xhr || req.path.includes('/api/') || req.headers.accept.includes('application/json')) {
@@ -135,6 +153,7 @@ exports.setCurrentUser = async (req, res, next) => {
           lastName: freshUser.lastName,
           email: freshUser.email,
           role: freshUser.role,
+          approved: freshUser.approved,
           profileImage: freshUser.profileImage || null,
           bio: freshUser.bio || null
         };
@@ -142,10 +161,10 @@ exports.setCurrentUser = async (req, res, next) => {
         // Make user data available to all views
         res.locals.user = req.session.user;
         
-        // Also add isAdmin and isAuthenticated convenience flags
+        // Also add convenience flags
         res.locals.isAuthenticated = true;
         res.locals.isAdmin = freshUser.role === 'admin';
-        res.locals.isEmployee = freshUser.role === 'employee' || freshUser.role === 'admin';
+        res.locals.isEmployee = ['employee', 'it-employee', 'support-employee', 'admin'].includes(freshUser.role);
         res.locals.isCustomer = freshUser.role === 'customer';
       } else {
         // User no longer exists in database, clear session
@@ -157,7 +176,7 @@ exports.setCurrentUser = async (req, res, next) => {
       res.locals.user = req.session.user;
       res.locals.isAuthenticated = true;
       res.locals.isAdmin = req.session.user.role === 'admin';
-      res.locals.isEmployee = req.session.user.role === 'employee' || req.session.user.role === 'admin';
+      res.locals.isEmployee = ['employee', 'it-employee', 'support-employee', 'admin'].includes(req.session.user.role);
       res.locals.isCustomer = req.session.user.role === 'customer';
     }
   }

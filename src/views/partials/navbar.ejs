@@ -62,6 +62,14 @@
                 <span class="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800">
                   Employee
                 </span>
+              <% } else if (user.role === 'it-employee') { %>
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-medium bg-indigo-100 text-indigo-800">
+                  IT Employee
+                </span>
+              <% } else if (user.role === 'support-employee') { %>
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-medium bg-teal-100 text-teal-800">
+                  Support Employee
+                </span>
               <% } else { %>
                 <span class="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
                   Customer
@@ -198,6 +206,14 @@
             <% } else if (user.role === 'employee') { %>
               <span class="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800">
                 Employee
+              </span>
+            <% } else if (user.role === 'it-employee') { %>
+              <span class="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-medium bg-indigo-100 text-indigo-800">
+                IT Employee
+              </span>
+            <% } else if (user.role === 'support-employee') { %>
+              <span class="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-medium bg-teal-100 text-teal-800">
+                Support Employee
               </span>
             <% } else { %>
               <span class="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
