@@ -22,8 +22,8 @@ const createDirectories = () => {
 // Create necessary directories
 createDirectories();
 
-// Configure storage for initial file upload (temporarily)
-const diskStorage = multer.diskStorage({
+// Configure storage
+const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     // Determine destination based on file type or route
     let uploadPath = path.join(__dirname, '../../uploads');
@@ -39,11 +39,13 @@ const diskStorage = multer.diskStorage({
   filename: function (req, file, cb) {
     // Create unique filename with timestamp and random string
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, `${uniqueSuffix}-temp`); // Temporary file without extension
+    
+    // Store uploaded file with .tmp extension first, will be converted to PNG later
+    cb(null, `${uniqueSuffix}.tmp`);
   }
 });
 
-// More permissive file filter to accept various image formats
+// File filter to only accept images
 const fileFilter = (req, file, cb) => {
   if (file.mimetype.startsWith('image/')) {
     cb(null, true);
@@ -52,74 +54,82 @@ const fileFilter = (req, file, cb) => {
   }
 };
 
-// Custom file processing middleware to convert images to PNG
-const processImage = (directory) => {
-  return async (req, res, next) => {
-    if (!req.file) {
-      return next(); // No file uploaded, skip processing
-    }
+// Function to convert uploaded image to PNG
+const convertToPng = async (filePath, outputFilename) => {
+  const outputPath = path.join(path.dirname(filePath), outputFilename);
+  
+  await sharp(filePath)
+    .png()
+    .toFile(outputPath);
     
-    try {
-      const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-      const outputFilename = `${uniqueSuffix}.png`;
-      const outputPath = path.join(directory, outputFilename);
-      
-      // Convert image to PNG format using sharp
-      await sharp(req.file.path)
-        .png()
-        .toFile(outputPath);
-        
-      // Delete the temporary file
-      fs.unlink(req.file.path, (err) => {
-        if (err) console.error('Error deleting temp file:', err);
-      });
-      
-      // Update req.file with new information
-      req.file.path = outputPath;
-      req.file.filename = outputFilename;
-      req.file.mimetype = 'image/png';
-      
-      next();
-    } catch (error) {
-      console.error('Image processing error:', error);
-      next(error);
-    }
-  };
+  // Delete the original temporary file
+  fs.unlink(filePath, (err) => {
+    if (err) console.error('Error deleting temp file:', err);
+  });
+  
+  return outputPath;
 };
 
 // Create multer instances for different scenarios
-const createUploader = (fileSize, type) => {
-  const directory = path.join(__dirname, '../../uploads', type);
-  
-  // Ensure specific directory exists
-  if (!fs.existsSync(directory)) {
-    fs.mkdirSync(directory, { recursive: true });
+const profileUpload = multer({
+  storage: storage,
+  fileFilter: fileFilter,
+  limits: {
+    fileSize: 5 * 1024 * 1024 // 5MB limit
   }
+});
+
+const ticketUpload = multer({
+  storage: storage,
+  fileFilter: fileFilter,
+  limits: {
+    fileSize: 10 * 1024 * 1024 // 10MB limit
+  }
+});
+
+// Wrap multer with PNG conversion middleware
+const wrapWithPngConversion = (multerMiddleware) => {
+  // Create a multer middleware wrapper that preserves the single() method
+  const wrapper = Object.create(multerMiddleware);
   
-  // Create the multer uploader
-  const uploader = multer({
-    storage: diskStorage,
-    fileFilter: fileFilter,
-    limits: {
-      fileSize: fileSize
-    }
-  }).single('image');
-  
-  // Return middleware function that processes the upload and then converts the image
-  return function(req, res, next) {
-    uploader(req, res, (err) => {
-      if (err) {
-        return next(err);
-      }
-      
-      // Process and convert the image
-      processImage(directory)(req, res, next);
-    });
+  // Override the single() method to add PNG conversion
+  wrapper.single = (fieldName) => {
+    const originalSingleMiddleware = multerMiddleware.single(fieldName);
+    
+    // Return a new middleware function
+    return async (req, res, next) => {
+      // Use the original multer middleware first
+      originalSingleMiddleware(req, res, async (err) => {
+        if (err) return next(err);
+        
+        // If no file was uploaded, continue
+        if (!req.file) return next();
+        
+        try {
+          // Convert the uploaded file to PNG
+          const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+          const outputFilename = `${uniqueSuffix}.png`;
+          const outputPath = await convertToPng(req.file.path, outputFilename);
+          
+          // Update req.file with new path and mimetype
+          req.file.originalPath = req.file.path;
+          req.file.path = outputPath;
+          req.file.filename = outputFilename;
+          req.file.mimetype = 'image/png';
+          
+          next();
+        } catch (error) {
+          console.error('Image processing error:', error);
+          next(error);
+        }
+      });
+    };
   };
+  
+  return wrapper;
 };
 
-// Export middleware functions for different upload scenarios
 module.exports = {
-  profileUpload: createUploader(5 * 1024 * 1024, 'profiles'),
-  ticketUpload: createUploader(10 * 1024 * 1024, 'tickets')
+  profileUpload: wrapWithPngConversion(profileUpload),
+  ticketUpload: wrapWithPngConversion(ticketUpload)
 };
