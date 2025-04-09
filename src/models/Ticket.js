@@ -38,6 +38,11 @@ const ticketSchema = new mongoose.Schema({
     ref: 'User',
     default: null
   },
+  responsibleRole: {
+    type: String,
+    enum: ['support-employee', 'it-employee', 'employee'],
+    default: 'support-employee'  // Default to support for general tickets
+  },
   lastActivity: {
     type: Date,
     default: Date.now

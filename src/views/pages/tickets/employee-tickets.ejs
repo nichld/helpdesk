@@ -63,6 +63,20 @@
         ],
         selectedValue: typeof filters !== 'undefined' ? filters.category : 'all'
       }) %>
+      
+      <!-- Department filter -->
+      <%- include('../../partials/_dropdown', {
+        id: 'responsibleRole',
+        name: 'responsibleRole',
+        label: 'Filter by department',
+        options: [
+          { value: 'all', text: 'All departments' },
+          { value: 'support-employee', text: 'Customer Support' },
+          { value: 'it-employee', text: 'IT Support' },
+          { value: 'employee', text: 'General' }
+        ],
+        selectedValue: typeof filters !== 'undefined' ? filters.responsibleRole : 'all'
+      }) %>
     </form>
   </div>
 
@@ -74,6 +88,7 @@
             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Title</th>
             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer</th>
             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
+            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Department</th>
             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Priority</th>
             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Assigned To</th>
@@ -93,6 +108,23 @@
                   <%= ticket.customer.firstName %> <%= ticket.customer.lastName %>
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><%= ticket.category %></td>
+                
+                <td class="px-6 py-4 whitespace-nowrap text-sm">
+                  <% if (ticket.responsibleRole === 'support-employee') { %>
+                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-teal-100 text-teal-800">
+                      Support
+                    </span>
+                  <% } else if (ticket.responsibleRole === 'it-employee') { %>
+                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-indigo-100 text-indigo-800">
+                      IT
+                    </span>
+                  <% } else { %>
+                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-purple-100 text-purple-800">
+                      General
+                    </span>
+                  <% } %>
+                </td>
+                
                 <td class="px-6 py-4 whitespace-nowrap text-sm">
                   <% if (ticket.status === 'open') { %>
                     <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
@@ -175,7 +207,7 @@
             <% }); %>
           <% } else { %>
             <tr>
-              <td colspan="8" class="px-6 py-4 text-center text-sm text-gray-500">
+              <td colspan="9" class="px-6 py-4 text-center text-sm text-gray-500">
                 No tickets found that match your filters.
               </td>
             </tr>
@@ -236,6 +268,7 @@
     const filterForm = document.getElementById('filter-form');
     const statusFilter = document.getElementById('status');
     const categoryFilter = document.getElementById('category');
+    const responsibleRoleFilter = document.getElementById('responsibleRole');
     const searchInput = document.getElementById('search');
     
     // Handle dropdown change events
@@ -244,6 +277,10 @@
     });
     
     categoryFilter.addEventListener('change', function() {
+      filterForm.submit();
+    });
+    
+    responsibleRoleFilter.addEventListener('change', function() {
       filterForm.submit();
     });
     

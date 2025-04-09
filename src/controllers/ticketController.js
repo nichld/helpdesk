@@ -131,10 +131,10 @@ exports.createTicketView = (req, res) => {
  */
 exports.createTicket = async (req, res) => {
   try {
-    const { title, description, category } = req.body;
+    const { title, description, category, responsibleRole } = req.body;
     
     const result = await ticketService.createTicket(
-      { title, description, category },
+      { title, description, category, responsibleRole },
       req.session.user.id
     );
     
@@ -142,7 +142,7 @@ exports.createTicket = async (req, res) => {
       return res.render('tickets/create-ticket', {
         title: 'Create New Ticket',
         error: result.message,
-        form: { title, description, category }
+        form: { title, description, category, responsibleRole }
       });
     }
     
@@ -320,23 +320,43 @@ exports.employeeDashboard = async (req, res) => {
  */
 exports.employeeTickets = async (req, res) => {
   try {
-    const { status, priority, category } = req.query;
+    const { status, priority, category, responsibleRole, search } = req.query;
     
     // Build filter object
     const filters = {};
-    if (status) filters.status = status;
-    if (priority) filters.priority = priority;
-    if (category) filters.category = category;
+    if (status && status !== 'all') filters.status = status;
+    if (priority && priority !== 'all') filters.priority = priority;
+    if (category && category !== 'all') filters.category = category;
+    if (responsibleRole && responsibleRole !== 'all') filters.responsibleRole = responsibleRole;
+    
+    // Apply role-based filtering automatically if user is support or IT employee
+    if (req.session.user.role === 'support-employee' && !responsibleRole) {
+      filters.responsibleRole = 'support-employee';
+    } else if (req.session.user.role === 'it-employee' && !responsibleRole) {
+      filters.responsibleRole = 'it-employee';
+    }
     
     const result = await ticketService.getAllTickets(filters);
     
+    // Apply search filtering if provided
+    let filteredTickets = result.success ? result.tickets : [];
+    if (search && search.trim()) {
+      const searchTerm = search.trim().toLowerCase();
+      filteredTickets = filteredTickets.filter(ticket => 
+        ticket.title.toLowerCase().includes(searchTerm) || 
+        (ticket.description && ticket.description.toLowerCase().includes(searchTerm))
+      );
+    }
+    
     res.render('tickets/employee-tickets', {
       title: 'All Tickets',
-      tickets: result.success ? result.tickets : [],
+      tickets: filteredTickets,
       filters: {
         status: status || 'all',
         priority: priority || 'all',
-        category: category || 'all'
+        category: category || 'all',
+        responsibleRole: responsibleRole || 'all',
+        search: search || ''
       },
       error: !result.success ? result.message : null
     });
@@ -345,7 +365,7 @@ exports.employeeTickets = async (req, res) => {
     res.render('tickets/employee-tickets', {
       title: 'All Tickets',
       tickets: [],
-      filters: { status: 'all', priority: 'all', category: 'all' },
+      filters: { status: 'all', priority: 'all', category: 'all', responsibleRole: 'all', search: '' },
       error: 'An error occurred while loading tickets'
     });
   }
@@ -472,13 +492,14 @@ exports.updateTicket = async (req, res) => {
 exports.updateTicketEJS = async (req, res) => {
   try {
     const { id } = req.params;
-    const { status, priority, category } = req.body;
+    const { status, priority, category, responsibleRole } = req.body;
     
     // Build update data
     const updateData = {};
     if (status) updateData.status = status;
     if (priority) updateData.priority = priority;
     if (category) updateData.category = category;
+    if (responsibleRole) updateData.responsibleRole = responsibleRole;
     
     const result = await ticketService.updateTicket(id, updateData);
     

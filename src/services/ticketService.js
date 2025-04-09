@@ -124,8 +124,8 @@ exports.updateTicket = async (ticketId, updateData) => {
       };
     }
     
-    // Only allow specific fields to be updated (remove description)
-    const validFields = ['status', 'priority', 'category', 'assignedTo'];
+    // Only allow specific fields to be updated (add responsibleRole)
+    const validFields = ['status', 'priority', 'category', 'assignedTo', 'responsibleRole'];
     const filteredData = {};
     
     Object.keys(updateData).forEach(key => {

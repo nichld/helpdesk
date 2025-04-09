@@ -52,6 +52,21 @@
       </div>
       
       <div>
+        <label for="responsibleRole" class="block text-sm font-medium text-gray-700">Department</label>
+        <p class="text-xs text-gray-500 mb-1">Which department should handle this ticket?</p>
+        <select 
+          id="responsibleRole" 
+          name="responsibleRole" 
+          class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          required
+        >
+          <option value="support-employee" <%= typeof form !== 'undefined' && form.responsibleRole === 'support-employee' ? 'selected' : '' %>>Customer Support</option>
+          <option value="it-employee" <%= typeof form !== 'undefined' && form.responsibleRole === 'it-employee' ? 'selected' : '' %>>IT Support</option>
+          <option value="employee" <%= typeof form !== 'undefined' && form.responsibleRole === 'employee' ? 'selected' : '' %>>General</option>
+        </select>
+      </div>
+      
+      <div>
         <label for="description" class="block text-sm font-medium text-gray-700">Description</label>
         <p class="text-xs text-gray-500 mb-1">Please provide detailed information about your issue (min 10 characters)</p>
         <textarea 

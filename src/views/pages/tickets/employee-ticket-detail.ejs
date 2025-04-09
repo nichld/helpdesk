@@ -59,6 +59,19 @@
         </div>
         
         <div>
+          <p class="text-xs text-gray-500">Department</p>
+          <p class="font-medium">
+            <% if (ticket.responsibleRole === 'support-employee') { %>
+              <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-teal-100 text-teal-800">Customer Support</span>
+            <% } else if (ticket.responsibleRole === 'it-employee') { %>
+              <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-indigo-100 text-indigo-800">IT Support</span>
+            <% } else { %>
+              <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800">General</span>
+            <% } %>
+          </p>
+        </div>
+        
+        <div>
           <p class="text-xs text-gray-500">Priority</p>
           <p class="font-medium">
             <% if (!ticket.priority) { %>
@@ -140,6 +153,16 @@
               <option value="billing" <%= ticket.category === 'billing' ? 'selected' : '' %>>Billing</option>
               <option value="feature" <%= ticket.category === 'feature' ? 'selected' : '' %>>Feature Request</option>
               <option value="bug" <%= ticket.category === 'bug' ? 'selected' : '' %>>Bug Report</option>
+            </select>
+          </div>
+          
+          <!-- Responsible Role selection -->
+          <div>
+            <label for="responsibleRole" class="block text-sm font-medium text-gray-700 mb-1">Department</label>
+            <select id="responsibleRole" name="responsibleRole" class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <option value="support-employee" <%= ticket.responsibleRole === 'support-employee' ? 'selected' : '' %>>Customer Support</option>
+              <option value="it-employee" <%= ticket.responsibleRole === 'it-employee' ? 'selected' : '' %>>IT Support</option>
+              <option value="employee" <%= ticket.responsibleRole === 'employee' ? 'selected' : '' %>>General</option>
             </select>
           </div>
           

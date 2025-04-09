@@ -57,6 +57,19 @@
       </div>
       
       <div>
+        <p class="text-xs text-gray-500">Department</p>
+        <p class="font-medium">
+          <% if (ticket.responsibleRole === 'support-employee') { %>
+            Customer Support
+          <% } else if (ticket.responsibleRole === 'it-employee') { %>
+            IT Support
+          <% } else { %>
+            General
+          <% } %>
+        </p>
+      </div>
+      
+      <div>
         <p class="text-xs text-gray-500">Priority</p>
         <p class="font-medium">
           <% if (!ticket.priority) { %>
