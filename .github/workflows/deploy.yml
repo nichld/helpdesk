@@ -23,13 +23,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Install Node.js and npm manually
-        run: |
-          curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
-          sudo apt-get install -y nodejs
-          node -v
-          npm -v
-
       - name: Install dependencies
         run: npm install
 
@@ -38,5 +31,5 @@ jobs:
 
       - name: Start app
         run: |
-          pm2 delete helpdesk || true
-          pm2 start npm --name helpdesk -- start
+          $(which pm2) delete helpdesk || true
+          $(which pm2) start npm --name helpdesk -- start
