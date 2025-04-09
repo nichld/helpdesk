@@ -2,6 +2,9 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const sharp = require('sharp');
+const { exec } = require('child_process');
+const { promisify } = require('util');
+const execAsync = promisify(exec);
 
 // Ensure upload directories exist
 const createDirectories = () => {
@@ -22,6 +25,43 @@ const createDirectories = () => {
 // Create necessary directories
 createDirectories();
 
+// Helper function to check if file is HEIC/HEIF format
+const isHeicImage = (mimetype, originalname) => {
+  return mimetype === 'image/heic' || 
+         mimetype === 'image/heif' || 
+         originalname.toLowerCase().endsWith('.heic') || 
+         originalname.toLowerCase().endsWith('.heif');
+};
+
+// Helper function to convert HEIC to PNG using heif-convert
+const convertHeicToPng = async (inputPath, outputPath) => {
+  try {
+    console.log(`Converting HEIC image: ${inputPath} to ${outputPath}`);
+    
+    // Try heif-convert first (from libheif-examples)
+    try {
+      await execAsync(`heif-convert "${inputPath}" "${outputPath}"`);
+      console.log('HEIC conversion successful with heif-convert');
+      return true;
+    } catch (heifError) {
+      console.log('heif-convert failed, trying ImageMagick:', heifError.message);
+      
+      // If heif-convert fails, try ImageMagick
+      try {
+        await execAsync(`convert "${inputPath}" "${outputPath}"`);
+        console.log('HEIC conversion successful with ImageMagick');
+        return true;
+      } catch (imagemagickError) {
+        console.log('ImageMagick failed:', imagemagickError.message);
+        throw new Error('All conversion methods failed');
+      }
+    }
+  } catch (error) {
+    console.error('HEIC conversion error:', error);
+    return false;
+  }
+};
+
 // Configure storage for the initial upload
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
@@ -39,8 +79,10 @@ const storage = multer.diskStorage({
   filename: function (req, file, cb) {
     // Create unique filename with timestamp and random string
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    // Store with .tmp extension initially
-    cb(null, `${uniqueSuffix}.tmp`);
+    
+    // Keep original extension for debugging, will convert later if needed
+    const originalExt = path.extname(file.originalname) || '.tmp';
+    cb(null, `${uniqueSuffix}${originalExt}`);
   }
 });
 
@@ -53,8 +95,10 @@ const fileFilter = (req, file, cb) => {
     'image/bmp', 'image/tiff', 'image/svg+xml'
   ];
 
-  // Also accept anything starting with 'image/'
-  if (acceptedTypes.includes(file.mimetype) || file.mimetype.startsWith('image/')) {
+  // Check if mimetype is accepted or if file extension suggests image
+  if (acceptedTypes.includes(file.mimetype) || 
+      file.mimetype.startsWith('image/') || 
+      isHeicImage(file.mimetype, file.originalname)) {
     console.log(`Accepting file: ${file.originalname} (${file.mimetype})`);
     cb(null, true);
   } else {
@@ -80,22 +124,36 @@ const processImage = async (file) => {
     throw new Error('No file provided for processing');
   }
 
-  console.log(`Processing file: ${file.path}`);
+  console.log(`Processing file: ${file.path}, mimetype: ${file.mimetype}`);
   const fileDir = path.dirname(file.path);
   const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
   const outputFilename = `${uniqueSuffix}.png`;
   const outputPath = path.join(fileDir, outputFilename);
 
   try {
-    // Use Sharp to convert to PNG with enhanced error handling
-    await sharp(file.path, { failOn: 'none' }) // 'none' helps handle corrupt images better
-      .png({ quality: 90 })
-      .toFile(outputPath);
+    // Check if this is a HEIC/HEIF image that needs special conversion
+    if (isHeicImage(file.mimetype, file.originalname)) {
+      console.log('HEIC/HEIF image detected, using special conversion');
+      
+      // Convert HEIC to PNG using external tools
+      const conversionSuccess = await convertHeicToPng(file.path, outputPath);
+      
+      if (!conversionSuccess) {
+        throw new Error('Failed to convert HEIC image');
+      }
+    } else {
+      // Use Sharp for standard image formats
+      await sharp(file.path, { failOn: 'none' })
+        .png({ quality: 90 })
+        .toFile(outputPath);
+    }
     
     // Delete original temp file
-    fs.unlink(file.path, err => {
-      if (err) console.error(`Error deleting temp file ${file.path}:`, err);
-    });
+    try {
+      fs.unlinkSync(file.path);
+    } catch (err) {
+      console.error(`Error deleting temp file ${file.path}:`, err);
+    }
     
     // Return info about the processed file
     return {
@@ -104,11 +162,11 @@ const processImage = async (file) => {
       mimetype: 'image/png'
     };
   } catch (error) {
-    console.error('Sharp image processing error:', error);
+    console.error('Image processing error:', error);
     
-    // If Sharp fails, try a simple file copy as fallback
-    const newPath = path.join(fileDir, `${uniqueSuffix}-unprocessed.png`);
+    // If conversion fails, try a simple file copy as fallback
     try {
+      const newPath = path.join(fileDir, `${uniqueSuffix}-fallback.png`);
       fs.copyFileSync(file.path, newPath);
       return {
         filename: path.basename(newPath),

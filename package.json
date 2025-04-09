@@ -19,7 +19,9 @@
     "start": "node src/app.js",
     "build": "echo 'No build step required'",
     "seed": "node src/seed/seedDatabase.js",
-    "seed:clear": "node src/seed/seedDatabase.js --clear"
+    "seed:clear": "node src/seed/seedDatabase.js --clear",
+    "setup-image-tools:mac": "brew install libheif imagemagick vips",
+    "setup-image-tools:linux": "sudo apt-get update && sudo apt-get install -y libheif-examples imagemagick libvips-dev"
   },
   "dependencies": {
     "bcryptjs": "^3.0.2",
