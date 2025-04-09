@@ -51,6 +51,9 @@
                 <a href="/admin/tickets/assigned" class="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200">
                   My Assigned
                 </a>
+                <a href="/admin/feedback" class="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200">
+                  Feedback
+                </a>
                 <a href="/users" class="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200">
                   Users
                 </a>
@@ -127,6 +130,7 @@
                   <% } %>
                   
                   <% if (user.role === 'admin') { %>
+                    <a href="/admin/feedback" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" role="menuitem">Feedback</a>
                     <a href="/users" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" role="menuitem">Manage Users</a>
                   <% } %>
                   <a href="/logout" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" role="menuitem">Sign out</a>
@@ -197,6 +201,9 @@
           <% if (user.role === 'admin') { %>
             <a href="/users" class="text-gray-600 hover:text-gray-900 block px-3 py-2 rounded-md text-base font-medium">
               Manage Users
+            </a>
+            <a href="/admin/feedback" class="text-gray-600 hover:text-gray-900 block px-3 py-2 rounded-md text-base font-medium">
+              Feedback
             </a>
           <% } %>
           
