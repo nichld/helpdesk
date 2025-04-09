@@ -20,12 +20,6 @@ jobs:
       SOCKET_TIMEOUT: ${{ secrets.SOCKET_TIMEOUT }}
 
     steps:
-      # Install system dependencies for image processing
-      - name: Install image processing libraries
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libheif-examples imagemagick libvips-dev
-          
       - name: Checkout Repository
         uses: actions/checkout@v4
 
