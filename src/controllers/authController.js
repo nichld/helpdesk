@@ -2,7 +2,6 @@ const authService = require('../services/authService');
 const User = require('../models/User');
 const path = require('path');
 const sharp = require('sharp');
-const fs = require('fs');
 
 /**
  * Renders login page
@@ -256,9 +255,6 @@ exports.uploadProfileImage = async (req, res) => {
     }
 
     console.log('Uploaded file info:', req.file);
-    console.log('Original filename:', req.file.originalname);
-    console.log('Detected MIME type:', req.file.mimetype);
-    
     const mimeType = req.file.mimetype;
     const pathToSave = path.join(__dirname, '../../uploads/profiles');
     const filenameBase = Date.now() + '-' + Math.round(Math.random() * 1E9);
@@ -267,14 +263,8 @@ exports.uploadProfileImage = async (req, res) => {
 
     let fileUrl;
 
-    const originalName = req.file.originalname || '';
-    const isHEIC = mimeType === 'image/heic' || mimeType === 'image/heif' || originalName.toLowerCase().endsWith('.heic');
-
-    if (isHEIC) {
+    if (mimeType === 'image/heic' || mimeType === 'image/heif') {
       console.log('Detected HEIC image, attempting conversion to PNG...');
-      const debugRawPath = path.join(pathToSave, `${filenameBase}-raw.heic`);
-      fs.writeFileSync(debugRawPath, req.file.buffer);
-      console.log('Saved raw HEIC buffer to:', debugRawPath);
 
       try {
         await sharp(req.file.buffer)
@@ -324,7 +314,7 @@ exports.uploadProfileImage = async (req, res) => {
       profileImage: fileUrl
     });
   } catch (error) {
-    console.error('Error uploading profile image:', error.stack || error);
+    console.error('Error uploading profile image:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to upload profile image'

@@ -44,8 +44,7 @@ const convertHeicToPng = async (inputPath, outputPath) => {
       console.log('HEIC conversion successful with heif-convert');
       return true;
     } catch (heifError) {
-      console.log('heif-convert failed:', heifError.stack || heifError);
-      console.log('Trying fallback with ImageMagick...');
+      console.log('heif-convert failed, trying ImageMagick:', heifError.message);
       
       // If heif-convert fails, try ImageMagick
       try {
@@ -143,7 +142,6 @@ const processImage = async (file) => {
         throw new Error('Failed to convert HEIC image');
       }
     } else {
-      console.log('Checking file existence:', fs.existsSync(file.path), file.path);
       // Use Sharp for standard image formats
       await sharp(file.path, { failOn: 'none' })
         .png({ quality: 90 })
@@ -164,7 +162,7 @@ const processImage = async (file) => {
       mimetype: 'image/png'
     };
   } catch (error) {
-    console.error('Image processing error:', error.stack || error);
+    console.error('Image processing error:', error);
     
     // If conversion fails, try a simple file copy as fallback
     try {
@@ -176,7 +174,7 @@ const processImage = async (file) => {
         mimetype: 'image/png'
       };
     } catch (copyError) {
-      console.error('Fallback copy also failed:', copyError.stack || copyError);
+      console.error('Fallback copy also failed:', copyError);
       throw error; // Re-throw the original error
     }
   }
@@ -197,7 +195,6 @@ const profileUpload = {
               message: 'File size too large (max 5MB)'
             });
           }
-          console.error('Unexpected Multer error:', err.stack || err);
           return res.status(400).json({
             success: false,
             message: err.message
@@ -246,7 +243,6 @@ const ticketUpload = {
               message: 'File size too large (max 10MB)'
             });
           }
-          console.error('Unexpected Multer error:', err.stack || err);
           return res.status(400).json({
             success: false,
             message: err.message
