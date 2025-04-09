@@ -16,7 +16,8 @@
   "main": "src/app.js",
   "scripts": {
     "dev": "nodemon -e js,ejs src/app.js",
-    "start": "node src/app.js"
+    "start": "node src/app.js",
+    "build": "node src/app.js"
   },
   "dependencies": {
     "bcryptjs": "^3.0.2",
