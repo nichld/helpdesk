@@ -1,0 +1,39 @@
+name: Deploy to Self-Hosted Runner
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install Dependencies
+        run: npm install
+
+      - name: Build Project
+        run: npm run build
+
+      - name: Deploy Application
+        run: |
+          export PORT=${{ secrets.PORT }}
+          export ALTERNATIVE_PORT=${{ secrets.ALTERNATIVE_PORT }}
+          export MONGODB_URI='${{ secrets.MONGODB_URI }}'
+          export SESSION_SECRET='${{ secrets.SESSION_SECRET }}'
+          export NODE_ENV='${{ secrets.NODE_ENV }}'
+          export DEFAULT_DOMAIN='${{ secrets.DEFAULT_DOMAIN }}'
+          export DEFAULT_PASSWORD='${{ secrets.DEFAULT_PASSWORD }}'
+          export SOCKET_TIMEOUT=${{ secrets.SOCKET_TIMEOUT }}
+
+          pm2 delete helpdesk || true
+          pm2 start npm --name "helpdesk" -- start
