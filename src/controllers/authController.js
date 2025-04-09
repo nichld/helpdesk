@@ -1,6 +1,7 @@
 const authService = require('../services/authService');
 const User = require('../models/User');
 const path = require('path');
+const sharp = require('sharp');
 
 /**
  * Renders login page
@@ -253,9 +254,43 @@ exports.uploadProfileImage = async (req, res) => {
       });
     }
 
-    // Create the file URL relative to the server
-    const fileUrl = `/uploads/profiles/${path.basename(req.file.path)}`;
-    
+    console.log('Uploaded file info:', req.file);
+    const mimeType = req.file.mimetype;
+    const pathToSave = path.join(__dirname, '../../uploads/profiles');
+    const filenameBase = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    const pngFilename = `${filenameBase}.png`;
+    const pngPath = path.join(pathToSave, pngFilename);
+
+    let fileUrl;
+
+    if (mimeType === 'image/heic' || mimeType === 'image/heif') {
+      console.log('Detected HEIC image, attempting conversion to PNG...');
+
+      try {
+        await sharp(req.file.buffer)
+          .png({ quality: 90 })
+          .toFile(pngPath);
+
+        fileUrl = `/uploads/profiles/${pngFilename}`;
+      } catch (sharpError) {
+        console.error('HEIC to PNG conversion failed:', sharpError);
+        return res.status(500).json({
+          success: false,
+          message: 'Failed to convert HEIC image'
+        });
+      }
+    } else {
+      try {
+        fileUrl = `/uploads/profiles/${path.basename(req.file.path || '')}`;
+      } catch (err) {
+        console.error('Failed to extract file path:', err);
+        return res.status(500).json({
+          success: false,
+          message: 'Failed to process uploaded image path'
+        });
+      }
+    }
+
     // Update user with new profile image
     const userId = req.session.user.id;
     const user = await User.findById(userId);
