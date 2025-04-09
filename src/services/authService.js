@@ -26,6 +26,16 @@ exports.authenticateUser = async (email, password) => {
       return { success: false, message: 'Invalid email or password.' };
     }
     
+    // Check if the user is approved
+    if (!user.approved) {
+      return { 
+        success: false, 
+        message: 'Your account is pending approval. You will be notified when an administrator approves your account.',
+        pendingApproval: true,
+        user
+      };
+    }
+    
     return { 
       success: true, 
       user
@@ -58,13 +68,14 @@ exports.registerUser = async (firstName, lastName, email, password) => {
       return { success: false, message: 'A user with this email already exists.' };
     }
     
-    // Create the new user
+    // Create the new user (default approved to false)
     const user = await User.create({
       firstName,
       lastName,
       email,
       password,
-      role: 'customer' // Default role for new registrations
+      role: 'customer',
+      approved: false
     });
     
     return { 
@@ -98,23 +109,53 @@ exports.createAdminIfNotExists = async () => {
     const defaultDomain = config.DEFAULT_DOMAIN;
     const defaultPassword = config.DEFAULT_PASSWORD;
 
-    // Check for each role type and create if it doesn't exist
-    const roles = ['admin', 'employee', 'customer'];
+    // First ensure there's an admin
+    const adminExists = await User.findOne({ role: 'admin' });
     
-    for (const role of roles) {
+    if (!adminExists) {
+      // Create a default admin user
+      await User.create({
+        firstName: defaultFirstName,
+        lastName: defaultLastName,
+        email: `admin@${defaultDomain}`,
+        password: defaultPassword,
+        role: 'admin',
+        approved: true
+      });
+      console.log(`Default admin user created: ${defaultFirstName} ${defaultLastName} (admin@${defaultDomain})`);
+    }
+    
+    // Create default employee users for each specialization if they don't exist
+    const employeeRoles = ['employee_technical', 'employee_billing', 'employee_general'];
+    for (const role of employeeRoles) {
+      const specialization = role.split('_')[1];
       const userExists = await User.findOne({ role });
       
       if (!userExists) {
-        // Create a default user for this role
         await User.create({
           firstName: defaultFirstName,
           lastName: defaultLastName,
-          email: `${role}@${defaultDomain}`,
+          email: `${specialization}@${defaultDomain}`,
           password: defaultPassword,
-          role: role
+          role: role,
+          approved: true
         });
-        console.log(`Default ${role} user created: ${defaultFirstName} ${defaultLastName} (${role}@${defaultDomain})`);
+        console.log(`Default ${role} user created: ${defaultFirstName} ${defaultLastName} (${specialization}@${defaultDomain})`);
       }
+    }
+    
+    // Create a default customer if none exists
+    const customerExists = await User.findOne({ role: 'customer' });
+    if (!customerExists) {
+      await User.create({
+        firstName: defaultFirstName,
+        lastName: defaultLastName,
+        email: `customer@${defaultDomain}`,
+        password: defaultPassword,
+        role: 'customer',
+        approved: true
+      });
+      console.log(`Default customer user created: ${defaultFirstName} ${defaultLastName} (customer@${defaultDomain})`);
     }
   } catch (error) {
     console.error('Error creating default users:', error);
@@ -191,13 +232,15 @@ exports.updateUserProfile = async (userId, updateData, currentPassword) => {
 /**
  * Updates a user's role (admin only)
  * @param {string} userId - ID of user to update
- * @param {string} role - New role ('customer', 'employee', or 'admin')
+ * @param {string} role - New role
  * @param {string} currentUserId - ID of the admin performing the change
  * @returns {Object} Update result
  */
 exports.updateUserRole = async (userId, role, currentUserId) => {
   try {
-    if (!['customer', 'employee', 'admin'].includes(role)) {
+    const validRoles = ['customer', 'employee_technical', 'employee_billing', 'employee_general', 'admin'];
+    
+    if (!validRoles.includes(role)) {
       return { success: false, message: 'Invalid role.' };
     }
     
@@ -213,7 +256,7 @@ exports.updateUserRole = async (userId, role, currentUserId) => {
     }
     
     // Prevent changing role of other admin users
-    if (user.role === 'admin') {
+    if (user.role === 'admin' && role !== 'admin') {
       return { success: false, message: 'Admin roles cannot be modified for security reasons.' };
     }
     
@@ -227,5 +270,57 @@ exports.updateUserRole = async (userId, role, currentUserId) => {
   } catch (error) {
     console.error('Role update error:', error);
     return { success: false, message: 'An error occurred while updating the role.' };
+  }
+};
+
+/**
+ * Approve a user account
+ * @param {string} userId - ID of user to approve
+ * @param {string} currentUserId - ID of the admin performing the approval
+ * @returns {Object} Approval result
+ */
+exports.approveUser = async (userId, currentUserId) => {
+  try {
+    const user = await User.findById(userId);
+    
+    if (!user) {
+      return { success: false, message: 'User not found.' };
+    }
+    
+    // Check if current user is admin
+    const adminUser = await User.findById(currentUserId);
+    if (!adminUser || adminUser.role !== 'admin') {
+      return { success: false, message: 'Only administrators can approve users.' };
+    }
+    
+    // Set user as approved
+    user.approved = true;
+    await user.save();
+    
+    return {
+      success: true,
+      user: await User.findById(userId).select('-password')
+    };
+  } catch (error) {
+    console.error('User approval error:', error);
+    return { success: false, message: 'An error occurred while approving the user.' };
+  }
+};
+
+/**
+ * Get pending approval users
+ * @returns {Object} List of users awaiting approval
+ */
+exports.getPendingApprovalUsers = async () => {
+  try {
+    const pendingUsers = await User.find({ approved: false }).select('-password').sort('createdAt');
+    
+    return {
+      success: true,
+      users: pendingUsers
+    };
+  } catch (error) {
+    console.error('Error fetching pending users:', error);
+    return { success: false, message: 'An error occurred while fetching pending users.' };
   }
 };

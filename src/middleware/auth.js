@@ -8,61 +8,104 @@ const User = require('../models/User');
  * Middleware to ensure user is authenticated
  */
 exports.ensureAuthenticated = (req, res, next) => {
-  console.log('Auth check - Session:', req.session.user ? `User ${req.session.user.id} (${req.session.user.role})` : 'No user in session');
-  
-  if (req.session.user) {
+  if (req.session && req.session.user) {
     return next();
-  } else {
-    if (req.xhr || req.path.includes('/api/') || req.headers.accept.includes('application/json')) {
-      return res.status(401).json({ 
-        success: false,
-        message: 'You need to be logged in to perform this action' 
-      });
-    }
-    req.session.returnTo = req.originalUrl;
-    return res.redirect('/login');
   }
+  
+  req.session.returnTo = req.originalUrl;
+  res.redirect('/login');
 };
 
 /**
- * Ensures user is an admin before accessing a route
+ * Middleware to ensure user is authenticated and approved
  */
-exports.ensureAdmin = (req, res, next) => {
-  if (req.session && req.session.user && req.session.user.role === 'admin') {
-    return next();
+exports.ensureApproved = (req, res, next) => {
+  if (req.session && req.session.user) {
+    if (req.session.user.approved) {
+      return next();
+    } else {
+      // User is authenticated but not approved
+      return res.redirect('/pending-approval');
+    }
+  }
+  
+  req.session.returnTo = req.originalUrl;
+  res.redirect('/login');
+};
+
+/**
+ * Middleware to ensure user is an employee
+ */
+exports.ensureEmployee = (req, res, next) => {
+  if (req.session && req.session.user) {
+    // Check if user is approved first
+    if (!req.session.user.approved) {
+      return res.redirect('/pending-approval');
+    }
+    
+    // Check if user is any type of employee or admin
+    if (req.session.user.role.startsWith('employee_') || req.session.user.role === 'admin') {
+      return next();
+    }
   }
   
   res.status(403).render('error', {
     title: 'Access Denied',
-    message: 'You do not have permission to access this page',
+    message: 'You do not have permission to access this resource',
     error: {
-      status: 403,
-      stack: ''
+      status: 403
     }
   });
 };
 
 /**
- * Middleware to ensure user is an employee or admin
+ * Middleware to ensure user is an admin
  */
-exports.ensureEmployee = (req, res, next) => {
-  console.log('Employee check - Role:', req.session.user ? req.session.user.role : 'No user');
-  
-  if (req.session.user && (req.session.user.role === 'employee' || req.session.user.role === 'admin')) {
+exports.ensureAdmin = (req, res, next) => {
+  if (req.session && req.session.user && req.session.user.role === 'admin') {
+    // Admin is always approved
     return next();
-  } else {
-    if (req.xhr || req.path.includes('/api/') || req.headers.accept.includes('application/json')) {
-      return res.status(403).json({ 
-        success: false, 
-        message: 'Only employees can perform this action' 
+  }
+  
+  res.status(403).render('error', {
+    title: 'Access Denied',
+    message: 'You need administrator privileges to access this resource',
+    error: {
+      status: 403
+    }
+  });
+};
+
+/**
+ * Middleware to check specialization for employee routes
+ * @param {string} specialization - Required specialization ('technical', 'billing', or 'general')
+ */
+exports.checkSpecialization = (specialization) => {
+  return (req, res, next) => {
+    if (req.session && req.session.user) {
+      // Admins can access any specialization
+      if (req.session.user.role === 'admin') {
+        return next();
+      }
+      
+      // Check if employee has the required specialization
+      const requiredRole = `employee_${specialization}`;
+      if (req.session.user.role === requiredRole) {
+        return next();
+      }
+      
+      // Employee with different specialization
+      return res.status(403).render('error', {
+        title: 'Access Denied',
+        message: `This area requires ${specialization} specialization`,
+        error: { status: 403 }
       });
     }
-    return res.render('error', {
-      title: 'Access Denied',
-      message: 'You do not have permission to access this page',
-      error: { status: 403 }
-    });
-  }
+    
+    // Not logged in
+    req.session.returnTo = req.originalUrl;
+    res.redirect('/login');
+  };
 };
 
 /**
@@ -136,7 +179,8 @@ exports.setCurrentUser = async (req, res, next) => {
           email: freshUser.email,
           role: freshUser.role,
           profileImage: freshUser.profileImage || null,
-          bio: freshUser.bio || null
+          bio: freshUser.bio || null,
+          approved: freshUser.approved || false
         };
         
         // Make user data available to all views
@@ -145,8 +189,9 @@ exports.setCurrentUser = async (req, res, next) => {
         // Also add isAdmin and isAuthenticated convenience flags
         res.locals.isAuthenticated = true;
         res.locals.isAdmin = freshUser.role === 'admin';
-        res.locals.isEmployee = freshUser.role === 'employee' || freshUser.role === 'admin';
+        res.locals.isEmployee = freshUser.role.startsWith('employee_') || freshUser.role === 'admin';
         res.locals.isCustomer = freshUser.role === 'customer';
+        res.locals.isApproved = freshUser.approved || false;
       } else {
         // User no longer exists in database, clear session
         delete req.session.user;
@@ -157,8 +202,9 @@ exports.setCurrentUser = async (req, res, next) => {
       res.locals.user = req.session.user;
       res.locals.isAuthenticated = true;
       res.locals.isAdmin = req.session.user.role === 'admin';
-      res.locals.isEmployee = req.session.user.role === 'employee' || req.session.user.role === 'admin';
+      res.locals.isEmployee = req.session.user.role.startsWith('employee_') || req.session.user.role === 'admin';
       res.locals.isCustomer = req.session.user.role === 'customer';
+      res.locals.isApproved = req.session.user.approved || false;
     }
   }
   

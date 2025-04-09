@@ -29,8 +29,12 @@ const UserSchema = new mongoose.Schema({
   },
   role: {
     type: String,
-    enum: ['customer', 'employee', 'admin'],
+    enum: ['customer', 'employee_technical', 'employee_billing', 'employee_general', 'admin'],
     default: 'customer'
+  },
+  approved: {
+    type: Boolean,
+    default: false
   },
   profileImage: {
     type: String,
@@ -49,6 +53,11 @@ const UserSchema = new mongoose.Schema({
 // Add a virtual property for full name
 UserSchema.virtual('fullName').get(function() {
   return `${this.firstName} ${this.lastName}`;
+});
+
+// Add a virtual property to check if user is any type of employee
+UserSchema.virtual('isEmployee').get(function() {
+  return this.role.startsWith('employee_') || this.role === 'admin';
 });
 
 // Ensure virtuals are included in JSON output

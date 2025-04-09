@@ -1,0 +1,258 @@
+<div class="bg-white rounded-lg shadow p-6">
+  <h1 class="text-2xl font-bold text-gray-900 mb-6">User Management</h1>
+
+  <!-- Pending approval users section -->
+  <div class="mb-8">
+    <h2 class="text-lg font-semibold text-gray-900 mb-4">Pending Approval Users</h2>
+    
+    <% if (pendingUsers && pendingUsers.length > 0) { %>
+      <div class="overflow-x-auto mb-4">
+        <table class="min-w-full bg-white border border-gray-200 divide-y divide-gray-200">
+          <thead class="bg-gray-50">
+            <tr>
+              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Registration Date</th>
+              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
+              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-200">
+            <% pendingUsers.forEach(user => { %>
+              <tr id="pending-user-<%= user._id %>" class="hover:bg-gray-50">
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <div class="flex items-center">
+                    <div class="flex-shrink-0 h-10 w-10 rounded-full overflow-hidden bg-gray-200">
+                      <% if (user.profileImage) { %>
+                        <img src="<%= user.profileImage %>" alt="Profile" class="h-full w-full object-cover">
+                      <% } else { %>
+                        <div class="h-full w-full flex items-center justify-center text-gray-500">
+                          <%= user.firstName.charAt(0).toUpperCase() %>
+                        </div>
+                      <% } %>
+                    </div>
+                    <div class="ml-4">
+                      <div class="text-sm font-medium text-gray-900"><%= user.firstName %> <%= user.lastName %></div>
+                    </div>
+                  </div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><%= user.email %></td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><%= new Date(user.createdAt).toLocaleDateString() %></td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">
+                  <select class="user-role-select px-2 py-1 text-sm border border-gray-300 rounded" data-user-id="<%= user._id %>">
+                    <option value="customer" <%= user.role === 'customer' ? 'selected' : '' %>>Customer</option>
+                    <option value="employee_technical" <%= user.role === 'employee_technical' ? 'selected' : '' %>>Technical Support</option>
+                    <option value="employee_billing" <%= user.role === 'employee_billing' ? 'selected' : '' %>>Billing Support</option>
+                    <option value="employee_general" <%= user.role === 'employee_general' ? 'selected' : '' %>>General Support</option>
+                    <option value="admin" <%= user.role === 'admin' ? 'selected' : '' %>>Administrator</option>
+                  </select>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">
+                  <button 
+                    class="approve-user-btn bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm"
+                    data-user-id="<%= user._id %>"
+                  >
+                    Approve
+                  </button>
+                </td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    <% } else { %>
+      <div class="text-center py-6 bg-gray-50 rounded-md border border-gray-200 text-gray-500">
+        No users pending approval.
+      </div>
+    <% } %>
+  </div>
+
+  <!-- All users section -->
+  <div>
+    <h2 class="text-lg font-semibold text-gray-900 mb-4">All Users</h2>
+    
+    <div class="overflow-x-auto">
+      <table class="min-w-full bg-white border border-gray-200 divide-y divide-gray-200">
+        <thead class="bg-gray-50">
+          <tr>
+            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
+            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-200">
+          <% users.forEach(user => { %>
+            <tr id="user-<%= user._id %>" class="hover:bg-gray-50">
+              <td class="px-6 py-4 whitespace-nowrap">
+                <div class="flex items-center">
+                  <div class="flex-shrink-0 h-10 w-10 rounded-full overflow-hidden bg-gray-200">
+                    <% if (user.profileImage) { %>
+                      <img src="<%= user.profileImage %>" alt="Profile" class="h-full w-full object-cover">
+                    <% } else { %>
+                      <div class="h-full w-full flex items-center justify-center text-gray-500">
+                        <%= user.firstName.charAt(0).toUpperCase() %>
+                      </div>
+                    <% } %>
+                  </div>
+                  <div class="ml-4">
+                    <div class="text-sm font-medium text-gray-900"><%= user.firstName %> <%= user.lastName %></div>
+                  </div>
+                </div>
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><%= user.email %></td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm">
+                <select class="user-role-select px-2 py-1 text-sm border border-gray-300 rounded" data-user-id="<%= user._id %>">
+                  <option value="customer" <%= user.role === 'customer' ? 'selected' : '' %>>Customer</option>
+                  <option value="employee_technical" <%= user.role === 'employee_technical' ? 'selected' : '' %>>Technical Support</option>
+                  <option value="employee_billing" <%= user.role === 'employee_billing' ? 'selected' : '' %>>Billing Support</option>
+                  <option value="employee_general" <%= user.role === 'employee_general' ? 'selected' : '' %>>General Support</option>
+                  <option value="admin" <%= user.role === 'admin' ? 'selected' : '' %>>Administrator</option>
+                </select>
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap">
+                <% if (user.approved) { %>
+                  <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                    Approved
+                  </span>
+                <% } else { %>
+                  <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                    Pending
+                  </span>
+                  <button 
+                    class="approve-user-btn ml-2 bg-green-600 hover:bg-green-700 text-white px-2 py-1 rounded text-xs"
+                    data-user-id="<%= user._id %>"
+                  >
+                    Approve
+                  </button>
+                <% } %>
+              </td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Handle role changes
+    const roleSelects = document.querySelectorAll('.user-role-select');
+    
+    roleSelects.forEach(select => {
+      select.addEventListener('change', function() {
+        const userId = this.getAttribute('data-user-id');
+        const newRole = this.value;
+        
+        updateUserRole(userId, newRole);
+      });
+    });
+    
+    // Handle user approval
+    const approveButtons = document.querySelectorAll('.approve-user-btn');
+    
+    approveButtons.forEach(button => {
+      button.addEventListener('click', function() {
+        const userId = this.getAttribute('data-user-id');
+        approveUser(userId);
+      });
+    });
+    
+    // Function to update user role
+    function updateUserRole(userId, role) {
+      fetch('/admin/users/update-role', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ userId, role }),
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          // Show success notification
+          if (window.showToast) {
+            window.showToast('User role updated successfully', 'success');
+          } else {
+            alert('User role updated successfully');
+          }
+        } else {
+          // Show error notification
+          if (window.showToast) {
+            window.showToast('Error: ' + data.message, 'error');
+          } else {
+            alert('Error: ' + data.message);
+          }
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        if (window.showToast) {
+          window.showToast('An error occurred', 'error');
+        } else {
+          alert('An error occurred');
+        }
+      });
+    }
+    
+    // Function to approve user
+    function approveUser(userId) {
+      fetch('/admin/users/approve', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ userId }),
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          // Show success notification
+          if (window.showToast) {
+            window.showToast('User approved successfully', 'success');
+          } else {
+            alert('User approved successfully');
+          }
+          
+          // Update UI - remove from pending section and update status in all users section
+          const pendingUserRow = document.getElementById(`pending-user-${userId}`);
+          if (pendingUserRow) {
+            pendingUserRow.remove();
+          }
+          
+          const userRow = document.getElementById(`user-${userId}`);
+          if (userRow) {
+            const statusCell = userRow.querySelector('td:last-child');
+            statusCell.innerHTML = `<span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Approved</span>`;
+          }
+          
+          // Check if pending section is empty now
+          const pendingTable = document.querySelector('#pendingUsers tbody');
+          if (pendingTable && pendingTable.children.length === 0) {
+            document.querySelector('#pendingUsers').innerHTML = `
+              <div class="text-center py-6 bg-gray-50 rounded-md border border-gray-200 text-gray-500">
+                No users pending approval.
+              </div>
+            `;
+          }
+        } else {
+          // Show error notification
+          if (window.showToast) {
+            window.showToast('Error: ' + data.message, 'error');
+          } else {
+            alert('Error: ' + data.message);
+          }
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        if (window.showToast) {
+          window.showToast('An error occurred', 'error');
+        } else {
+          alert('An error occurred');
+        }
+      });
+    }
+  });
+</script>

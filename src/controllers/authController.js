@@ -38,7 +38,8 @@ exports.login = async (req, res) => {
         lastName: result.user.lastName,
         email: result.user.email,
         role: result.user.role,
-        profileImage: result.user.profileImage
+        profileImage: result.user.profileImage,
+        approved: result.user.approved
       };
       
       // Check if there's a return URL saved in the session
@@ -46,6 +47,21 @@ exports.login = async (req, res) => {
       delete req.session.returnTo;
       
       return res.redirect(returnTo);
+    }
+    
+    // Handle pending approval case
+    if (result.pendingApproval) {
+      req.session.user = {
+        id: result.user._id,
+        firstName: result.user.firstName,
+        lastName: result.user.lastName,
+        email: result.user.email,
+        role: result.user.role,
+        profileImage: result.user.profileImage,
+        approved: false
+      };
+      
+      return res.redirect('/pending-approval');
     }
     
     res.render('auth/login', {
@@ -78,9 +94,12 @@ exports.register = async (req, res) => {
         lastName: result.user.lastName,
         email: result.user.email,
         role: result.user.role,
-        profileImage: result.user.profileImage
+        profileImage: result.user.profileImage,
+        approved: result.user.approved
       };
-      return res.redirect('/');
+      
+      // Redirect to pending approval page instead of home
+      return res.redirect('/pending-approval');
     }
     
     res.render('auth/register', {
@@ -241,15 +260,31 @@ exports.uploadProfileImage = async (req, res) => {
 };
 
 /**
+ * Renders pending approval page
+ */
+exports.pendingApproval = (req, res) => {
+  if (!req.session.user) {
+    return res.redirect('/login');
+  }
+  
+  res.render('auth/pending-approval', {
+    title: 'Account Pending Approval',
+    user: req.session.user
+  });
+};
+
+/**
  * Renders user management page for admins
  */
 exports.manageUsers = async (req, res) => {
   try {
     const users = await User.find().select('-password').sort('lastName firstName');
+    const pendingResult = await authService.getPendingApprovalUsers();
     
     res.render('auth/users', {
       title: 'User Management',
-      users: users
+      users: users,
+      pendingUsers: pendingResult.success ? pendingResult.users : []
     });
   } catch (error) {
     res.status(500).render('error', {
@@ -271,7 +306,8 @@ exports.updateUserRole = async (req, res) => {
     const { userId, role } = req.body;
     const currentUserId = req.session.user.id; // Get the current admin's ID
     
-    if (!['customer', 'employee', 'admin'].includes(role)) {
+    const validRoles = ['customer', 'employee_technical', 'employee_billing', 'employee_general', 'admin'];
+    if (!validRoles.includes(role)) {
       return res.status(400).json({ 
         success: false, 
         message: 'Invalid role specified' 
@@ -296,6 +332,36 @@ exports.updateUserRole = async (req, res) => {
     return res.status(500).json({ 
       success: false, 
       message: 'An error occurred while updating user role' 
+    });
+  }
+};
+
+/**
+ * Approves a user account (admin only)
+ */
+exports.approveUser = async (req, res) => {
+  try {
+    const { userId } = req.body;
+    const currentUserId = req.session.user.id; // Get the current admin's ID
+    
+    const result = await authService.approveUser(userId, currentUserId);
+    
+    if (result.success) {
+      return res.status(200).json({ 
+        success: true, 
+        user: result.user 
+      });
+    } else {
+      return res.status(400).json({ 
+        success: false, 
+        message: result.message 
+      });
+    }
+  } catch (error) {
+    console.error('Error approving user:', error);
+    return res.status(500).json({ 
+      success: false, 
+      message: 'An error occurred while approving the user' 
     });
   }
 };

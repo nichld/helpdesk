@@ -1,23 +1,35 @@
 const express = require('express');
 const router = express.Router();
 const authController = require('../controllers/authController');
-const { ensureAuthenticated, redirectIfAuthenticated, ensureAdmin } = require('../middleware/auth');
+const { ensureAuthenticated, ensureAdmin, ensureApproved } = require('../middleware/auth');
 const { profileUpload } = require('../utils/uploadConfig');
 
-// Public routes
-router.get('/login', redirectIfAuthenticated, authController.getLogin);
-router.post('/login', redirectIfAuthenticated, authController.login);
-router.get('/register', redirectIfAuthenticated, authController.getRegister);
-router.post('/register', redirectIfAuthenticated, authController.register);
-router.get('/logout', authController.logout);
+// Authentication routes
+router.get('/login', authController.getLogin);
+router.post('/login', authController.login);
+router.get('/register', authController.getRegister);
+router.post('/register', authController.register);
+router.post('/logout', authController.logout);
 
-// Protected routes
-router.get('/profile', ensureAuthenticated, authController.profile);
-router.post('/profile/update', ensureAuthenticated, authController.updateProfile);
-router.post('/profile/upload-image', ensureAuthenticated, profileUpload.single('profileImage'), authController.uploadProfileImage);
+// Account approval routes
+router.get('/pending-approval', authController.pendingApproval);
+router.get('/check-approval', ensureAuthenticated, (req, res) => {
+  res.json({ approved: req.session.user.approved });
+});
+
+// Profile routes (require approval)
+router.get('/profile', ensureAuthenticated, ensureApproved, authController.profile);
+router.post('/profile', ensureAuthenticated, ensureApproved, authController.updateProfile);
+router.post('/profile/image', 
+  ensureAuthenticated,
+  ensureApproved,
+  profileUpload.single('image'),
+  authController.uploadProfileImage
+);
 
 // Admin routes
-router.get('/users', ensureAuthenticated, ensureAdmin, authController.manageUsers);
-router.post('/users/update-role', ensureAuthenticated, ensureAdmin, authController.updateUserRole);
+router.get('/admin/users', ensureAuthenticated, ensureAdmin, authController.manageUsers);
+router.post('/admin/users/update-role', ensureAuthenticated, ensureAdmin, authController.updateUserRole);
+router.post('/admin/users/approve', ensureAuthenticated, ensureAdmin, authController.approveUser);
 
 module.exports = router;
