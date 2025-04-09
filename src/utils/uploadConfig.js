@@ -63,7 +63,7 @@ const convertHeicToPng = async (inputPath, outputPath) => {
 };
 
 // Configure storage for the initial upload
-const storage = multer.diskStorage({
+const storage = multer.memoryStorage({
   destination: function (req, file, cb) {
     // Determine destination based on file type or route
     let uploadPath = path.join(__dirname, '../../uploads');
