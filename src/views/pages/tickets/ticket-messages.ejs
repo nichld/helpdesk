@@ -150,6 +150,7 @@
 </style>
 
 <script src="/socket.io/socket.io.js"></script>
+<script src="/js/imageConverter.js"></script>
 <script>
   document.addEventListener('DOMContentLoaded', function() {
     const socket = io({
@@ -221,12 +222,12 @@
     const messageForm = document.getElementById('ticket-message-form');
     
     if (messageForm) {
-      messageForm.addEventListener('submit', function(e) {
+      messageForm.addEventListener('submit', async function(e) {
         e.preventDefault();
         
-        const formData = new FormData(this);
         const messageContent = document.getElementById('message-content').value;
-        const messageImage = document.getElementById('message-image').files[0];
+        const messageImageInput = document.getElementById('message-image');
+        const messageImage = messageImageInput.files[0];
         
         if (!messageContent.trim() && !messageImage) {
           if (window.showToast) {
@@ -245,20 +246,33 @@
         submitButton.disabled = true;
         submitButton.innerHTML = 'Sending...';
         
-        // Send message to server
-        fetch(endpoint, {
-          method: 'POST',
-          body: formData
-        })
-        .then(response => response.json())
-        .then(data => {
+        try {
+          // Convert image if present
+          const formData = new FormData();
+          formData.append('content', messageContent);
+          
+          if (messageImage) {
+            console.log(`Processing image: ${messageImage.name} (${messageImage.type})`);
+            const convertedImage = await ImageConverter.convertToPng(messageImage);
+            formData.append('image', convertedImage);
+            console.log(`Image converted: ${convertedImage.name} (${convertedImage.size} bytes)`);
+          }
+          
+          // Send message to server
+          const response = await fetch(endpoint, {
+            method: 'POST',
+            body: formData
+          });
+          
+          const data = await response.json();
+          
           submitButton.disabled = false;
           submitButton.innerHTML = 'Send Message';
           
           if (data.success) {
             document.getElementById('message-content').value = '';
             document.getElementById('message-image').value = '';
-            fileNameDisplay.textContent = '';
+            document.getElementById('file-name').textContent = '';
             
             if (!socketConnected && data.message) {
               addMessageToUI(data.message);
@@ -267,13 +281,12 @@
           } else {
             showError('Error sending message: ' + data.message);
           }
-        })
-        .catch(error => {
+        } catch (error) {
           submitButton.disabled = false;
           submitButton.innerHTML = 'Send Message';
           console.error('Error sending message:', error);
           showError('An error occurred while sending the message');
-        });
+        }
       });
     }
     

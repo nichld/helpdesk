@@ -37,12 +37,16 @@
   <!-- Toast notification container -->
   <div id="toast-container" class="fixed bottom-5 right-5 z-50"></div>
 
-  <% if (typeof script !== 'undefined') { %>
-    <%- script %>
-  <% } %>
   <script src="/js/popup.js"></script>
   
   <!-- Include toast notifications script -->
   <script src="/js/toast.js"></script>
+  
+  <!-- Include image converter utility -->
+  <script src="/js/imageConverter.js"></script>
+  
+  <% if (typeof script !== 'undefined') { %>
+    <%- script %>
+  <% } %>
 </body>
 </html>
