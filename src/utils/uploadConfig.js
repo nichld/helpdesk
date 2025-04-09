@@ -22,7 +22,7 @@ const createDirectories = () => {
 // Create necessary directories
 createDirectories();
 
-// Configure storage
+// Configure storage for the initial upload
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     // Determine destination based on file type or route
@@ -39,97 +39,187 @@ const storage = multer.diskStorage({
   filename: function (req, file, cb) {
     // Create unique filename with timestamp and random string
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    
-    // Store uploaded file with .tmp extension first, will be converted to PNG later
+    // Store with .tmp extension initially
     cb(null, `${uniqueSuffix}.tmp`);
   }
 });
 
-// File filter to only accept images
+// Extended file filter to accept more image formats
 const fileFilter = (req, file, cb) => {
-  if (file.mimetype.startsWith('image/')) {
+  // Accept all common image formats including HEIC from iOS
+  const acceptedTypes = [
+    'image/jpeg', 'image/png', 'image/gif', 'image/webp',
+    'image/heic', 'image/heif', // iOS formats
+    'image/bmp', 'image/tiff', 'image/svg+xml'
+  ];
+
+  // Also accept anything starting with 'image/'
+  if (acceptedTypes.includes(file.mimetype) || file.mimetype.startsWith('image/')) {
+    console.log(`Accepting file: ${file.originalname} (${file.mimetype})`);
     cb(null, true);
   } else {
-    cb(new Error('Only image files are allowed!'), false);
+    console.log(`Rejecting file: ${file.originalname} (${file.mimetype})`);
+    cb(new Error(`Only image files are allowed. Got: ${file.mimetype}`), false);
   }
 };
 
-// Function to convert uploaded image to PNG
-const convertToPng = async (filePath, outputFilename) => {
-  const outputPath = path.join(path.dirname(filePath), outputFilename);
-  
-  await sharp(filePath)
-    .png()
-    .toFile(outputPath);
-    
-  // Delete the original temporary file
-  fs.unlink(filePath, (err) => {
-    if (err) console.error('Error deleting temp file:', err);
+// Create multer instances with the basic configuration
+const createMulter = (fileSize) => {
+  return multer({
+    storage: storage,
+    fileFilter: fileFilter,
+    limits: {
+      fileSize: fileSize
+    }
   });
-  
-  return outputPath;
 };
 
-// Create multer instances for different scenarios
-const profileUpload = multer({
-  storage: storage,
-  fileFilter: fileFilter,
-  limits: {
-    fileSize: 5 * 1024 * 1024 // 5MB limit
+// Process uploaded image with Sharp and convert to PNG
+const processImage = async (file) => {
+  if (!file) {
+    throw new Error('No file provided for processing');
   }
-});
 
-const ticketUpload = multer({
-  storage: storage,
-  fileFilter: fileFilter,
-  limits: {
-    fileSize: 10 * 1024 * 1024 // 10MB limit
-  }
-});
+  console.log(`Processing file: ${file.path}`);
+  const fileDir = path.dirname(file.path);
+  const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+  const outputFilename = `${uniqueSuffix}.png`;
+  const outputPath = path.join(fileDir, outputFilename);
 
-// Wrap multer with PNG conversion middleware
-const wrapWithPngConversion = (multerMiddleware) => {
-  // Create a multer middleware wrapper that preserves the single() method
-  const wrapper = Object.create(multerMiddleware);
-  
-  // Override the single() method to add PNG conversion
-  wrapper.single = (fieldName) => {
-    const originalSingleMiddleware = multerMiddleware.single(fieldName);
+  try {
+    // Use Sharp to convert to PNG with enhanced error handling
+    await sharp(file.path, { failOn: 'none' }) // 'none' helps handle corrupt images better
+      .png({ quality: 90 })
+      .toFile(outputPath);
     
-    // Return a new middleware function
+    // Delete original temp file
+    fs.unlink(file.path, err => {
+      if (err) console.error(`Error deleting temp file ${file.path}:`, err);
+    });
+    
+    // Return info about the processed file
+    return {
+      filename: outputFilename,
+      path: outputPath,
+      mimetype: 'image/png'
+    };
+  } catch (error) {
+    console.error('Sharp image processing error:', error);
+    
+    // If Sharp fails, try a simple file copy as fallback
+    const newPath = path.join(fileDir, `${uniqueSuffix}-unprocessed.png`);
+    try {
+      fs.copyFileSync(file.path, newPath);
+      return {
+        filename: path.basename(newPath),
+        path: newPath,
+        mimetype: 'image/png'
+      };
+    } catch (copyError) {
+      console.error('Fallback copy also failed:', copyError);
+      throw error; // Re-throw the original error
+    }
+  }
+};
+
+// Create middleware wrappers for the different types
+const profileUpload = {
+  single: (fieldName) => {
+    const upload = createMulter(5 * 1024 * 1024); // 5MB limit
+    
     return async (req, res, next) => {
-      // Use the original multer middleware first
-      originalSingleMiddleware(req, res, async (err) => {
-        if (err) return next(err);
+      upload.single(fieldName)(req, res, async (err) => {
+        if (err) {
+          console.error('Multer error:', err);
+          if (err.code === 'LIMIT_FILE_SIZE') {
+            return res.status(400).json({
+              success: false,
+              message: 'File size too large (max 5MB)'
+            });
+          }
+          return res.status(400).json({
+            success: false,
+            message: err.message
+          });
+        }
         
         // If no file was uploaded, continue
-        if (!req.file) return next();
+        if (!req.file) {
+          return next();
+        }
         
         try {
-          // Convert the uploaded file to PNG
-          const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-          const outputFilename = `${uniqueSuffix}.png`;
-          const outputPath = await convertToPng(req.file.path, outputFilename);
+          // Process the image with Sharp
+          const processedFile = await processImage(req.file);
           
-          // Update req.file with new path and mimetype
+          // Update the file info in req.file
           req.file.originalPath = req.file.path;
-          req.file.path = outputPath;
-          req.file.filename = outputFilename;
-          req.file.mimetype = 'image/png';
+          req.file.path = processedFile.path;
+          req.file.filename = processedFile.filename;
+          req.file.mimetype = processedFile.mimetype;
           
           next();
         } catch (error) {
           console.error('Image processing error:', error);
-          next(error);
+          return res.status(500).json({
+            success: false,
+            message: 'Error processing uploaded image'
+          });
         }
       });
     };
-  };
-  
-  return wrapper;
+  }
+};
+
+const ticketUpload = {
+  single: (fieldName) => {
+    const upload = createMulter(10 * 1024 * 1024); // 10MB limit
+    
+    return async (req, res, next) => {
+      upload.single(fieldName)(req, res, async (err) => {
+        if (err) {
+          console.error('Multer error:', err);
+          if (err.code === 'LIMIT_FILE_SIZE') {
+            return res.status(400).json({
+              success: false,
+              message: 'File size too large (max 10MB)'
+            });
+          }
+          return res.status(400).json({
+            success: false,
+            message: err.message
+          });
+        }
+        
+        // If no file was uploaded, continue
+        if (!req.file) {
+          return next();
+        }
+        
+        try {
+          // Process the image with Sharp
+          const processedFile = await processImage(req.file);
+          
+          // Update the file info in req.file
+          req.file.originalPath = req.file.path;
+          req.file.path = processedFile.path;
+          req.file.filename = processedFile.filename;
+          req.file.mimetype = processedFile.mimetype;
+          
+          next();
+        } catch (error) {
+          console.error('Image processing error:', error);
+          return res.status(500).json({
+            success: false,
+            message: 'Error processing uploaded image'
+          });
+        }
+      });
+    };
+  }
 };
 
 module.exports = {
-  profileUpload: wrapWithPngConversion(profileUpload),
-  ticketUpload: wrapWithPngConversion(ticketUpload)
+  profileUpload,
+  ticketUpload
 };
