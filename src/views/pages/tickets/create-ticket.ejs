@@ -43,11 +43,9 @@
           required
         >
           <option value="" disabled <%= typeof form === 'undefined' || !form.category ? 'selected' : '' %>>Select a category</option>
-          <option value="Technical Issue" <%= typeof form !== 'undefined' && form.category === 'Technical Issue' ? 'selected' : '' %>>Technical Issue</option>
-          <option value="Billing" <%= typeof form !== 'undefined' && form.category === 'Billing' ? 'selected' : '' %>>Billing</option>
-          <option value="Account" <%= typeof form !== 'undefined' && form.category === 'Account' ? 'selected' : '' %>>Account</option>
-          <option value="Feature Request" <%= typeof form !== 'undefined' && form.category === 'Feature Request' ? 'selected' : '' %>>Feature Request</option>
-          <option value="Other" <%= typeof form !== 'undefined' && form.category === 'Other' ? 'selected' : '' %>>Other</option>
+          <% ticketConstants.TICKET_CATEGORIES.forEach(category => { %>
+            <option value="<%= category.value %>" <%= typeof form !== 'undefined' && form.category === category.value ? 'selected' : '' %>><%= category.label %></option>
+          <% }); %>
         </select>
       </div>
       
@@ -60,9 +58,9 @@
           class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           required
         >
-          <option value="support-employee" <%= typeof form !== 'undefined' && form.responsibleRole === 'support-employee' ? 'selected' : '' %>>Customer Support</option>
-          <option value="it-employee" <%= typeof form !== 'undefined' && form.responsibleRole === 'it-employee' ? 'selected' : '' %>>IT Support</option>
-          <option value="employee" <%= typeof form !== 'undefined' && form.responsibleRole === 'employee' ? 'selected' : '' %>>General</option>
+          <% ticketConstants.RESPONSIBLE_ROLES.forEach(role => { %>
+            <option value="<%= role.value %>" <%= typeof form !== 'undefined' && form.responsibleRole === role.value ? 'selected' : '' %>><%= role.label %></option>
+          <% }); %>
         </select>
       </div>
       

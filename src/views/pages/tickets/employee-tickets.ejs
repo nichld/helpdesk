@@ -55,11 +55,10 @@
         label: 'Filter by category',
         options: [
           { value: 'all', text: 'All categories' },
-          { value: 'Technical Issue', text: 'Technical Issue' },
-          { value: 'Billing', text: 'Billing' },
-          { value: 'Account', text: 'Account' },
-          { value: 'Feature Request', text: 'Feature Request' },
-          { value: 'Other', text: 'Other' }
+          ...ticketConstants.TICKET_CATEGORIES.map(cat => ({
+            value: cat.value, 
+            text: cat.label
+          }))
         ],
         selectedValue: typeof filters !== 'undefined' ? filters.category : 'all'
       }) %>
@@ -71,9 +70,10 @@
         label: 'Filter by department',
         options: [
           { value: 'all', text: 'All departments' },
-          { value: 'support-employee', text: 'Customer Support' },
-          { value: 'it-employee', text: 'IT Support' },
-          { value: 'employee', text: 'General' }
+          ...ticketConstants.RESPONSIBLE_ROLES.map(role => ({
+            value: role.value, 
+            text: role.label
+          }))
         ],
         selectedValue: typeof filters !== 'undefined' ? filters.responsibleRole : 'all'
       }) %>

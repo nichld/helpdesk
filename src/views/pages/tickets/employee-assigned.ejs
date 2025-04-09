@@ -40,10 +40,10 @@
         label: 'Filter by status',
         options: [
           { value: 'all', text: 'All statuses' },
-          { value: 'open', text: 'Open' },
-          { value: 'in-progress', text: 'In Progress' },
-          { value: 'solved', text: 'Solved' },
-          { value: 'closed', text: 'Closed' }
+          ...ticketConstants.STATUSES.map(status => ({
+            value: status.value, 
+            text: status.label
+          }))
         ],
         selectedValue: typeof filters !== 'undefined' ? filters.status : 'all'
       }) %>

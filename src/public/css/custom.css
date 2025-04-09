@@ -1,4 +1,4 @@
-/* Message highlight animation for new messages */
+/* Message highlight animation for new messages - Can't be done with Tailwind alone */
 @keyframes highlight-fade {
   0% {
     background-color: rgba(59, 130, 246, 0.2);
@@ -12,170 +12,28 @@
   animation: highlight-fade 1.5s ease-out;
 }
 
-/* Force correct styling for message bubbles */
-[data-is-own-message="true"] {
-  flex-direction: row-reverse !important;
-}
-
-[data-is-own-message="false"] {
-  flex-direction: row !important;
-}
-
-/* Message bubble styling */
-.message-bubble {
+/* Fix mobile overflow issues */
+body {
+  overflow-x: hidden;
+  width: 100%;
   position: relative;
-  max-width: 80%;
-  padding: 0.75rem;
-  border-radius: 0.5rem;
 }
 
-[data-is-own-message="true"] .message-bubble {
-  background-color: #dbeafe !important; /* blue-100 */
+/* Ensure user dropdown doesn't create overflow */
+#user-dropdown {
+  max-width: calc(100vw - 2rem);
+  overflow-x: hidden;
+  white-space: normal;
+  word-break: break-word;
 }
 
-[data-is-own-message="false"] .message-bubble {
-  background-color: #f3f4f6 !important; /* gray-100 */
+/* Make all scrollable containers use proper box model */
+.overflow-x-auto,
+.overflow-y-auto {
+  -webkit-overflow-scrolling: touch;
 }
 
-/* Message header with avatar */
-.message-header {
-  display: flex;
-  align-items: center;
-  margin-bottom: 0.5rem;
-}
-
-.message-avatar {
-  width: 2rem;
-  height: 2rem;
-  border-radius: 50%;
-  overflow: hidden;
-  margin-right: 0.5rem;
-  flex-shrink: 0;
-}
-
-.message-sender {
-  font-size: 0.75rem;
-  font-weight: 500;
-  color: #374151; /* gray-700 */
-}
-
-/* Timestamp hover effect */
-.message-timestamp {
-  display: none;
-  font-size: 0.75rem;
-  color: #6b7280; /* gray-500 */
-  margin-top: 0.5rem;
-  text-align: right;
-}
-
-.message-bubble:hover .message-timestamp {
-  display: block;
-}
-
-/* Updated ticket container styles - allow full scrolling */
-.ticket-container {
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  overflow: visible; /* Allow content to overflow naturally */
-}
-
-.ticket-header {
-  margin-bottom: 1rem;
-}
-
-.chat-container {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-  min-height: 0; /* Important for nested flex containers */
-  position: relative;
-  border: 1px solid #e5e7eb;
-  border-radius: 0.5rem;
-  background: white;
-}
-
-.messages-container {
-  flex: 1;
-  overflow-y: auto;
-  padding: 1.5rem;
-  scroll-behavior: smooth;
-}
-
-.message-form {
-  position: sticky;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  width: 100%;
-  background: white;
-  border-top: 1px solid #e5e7eb;
-  padding: 1rem;
-  z-index: 10;
-}
-
-.toggle-metadata-btn {
-  display: flex;
-  align-items: center;
-  padding: 0.5rem 1rem;
-  background: white;
-  border: 1px solid #e5e7eb;
-  border-radius: 0.25rem;
-  font-size: 0.875rem;
-  cursor: pointer;
-  margin-bottom: 0.5rem;
-}
-
-.toggle-metadata-btn:hover {
-  background: #f9fafb;
-}
-
-.toggle-metadata-btn svg {
-  transition: transform 0.2s ease-in-out;
-}
-
-.toggle-metadata-btn.collapsed svg {
-  transform: rotate(-180deg);
-}
-
-/* Improved chat container styles with dynamic height */
-.message-page-container {
-  display: flex;
-  flex-direction: column;
-  height: 100%; /* Will be calculated by JS */
-  width: 100%;
-  overflow: hidden;
-}
-
-.message-page-header {
-  flex-shrink: 0;
-  padding-bottom: 1rem;
-}
-
-.message-page-content {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  min-height: 0; /* Critical for nested flex containers */
-  overflow: hidden;
-  background: white;
-}
-
-.message-page-messages {
-  flex: 1;
-  overflow-y: auto;
-  padding: 1rem;
-  scroll-behavior: smooth;
-}
-
-.message-page-form {
-  flex-shrink: 0;
-  padding: 1rem;
-  border-top: 1px solid #e5e7eb;
-  background: white;
-}
-
-/* Consistent styling for select elements */
+/* Select appearance - this is the only part that can't be easily done with Tailwind */
 select {
   appearance: none;
   background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E");
@@ -183,9 +41,4 @@ select {
   background-repeat: no-repeat;
   background-size: 1.5em 1.5em;
   padding-right: 2.5rem;
-}
-
-/* Add transition for smoother focus effects */
-select, button, input, textarea {
-  transition: border-color 150ms ease-in-out, box-shadow 150ms ease-in-out;
 }

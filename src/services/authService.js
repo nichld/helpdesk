@@ -309,3 +309,30 @@ exports.deleteUser = async (userId, currentUserId) => {
     return { success: false, message: 'An error occurred while deleting the user.' };
   }
 };
+
+/**
+ * Get users by roles
+ * @param {Array} roles - Array of role names to filter users by
+ * @returns {Object} Object containing success flag and users array
+ */
+exports.getUsersByRoles = async (roles) => {
+  try {
+    const users = await User.find({ 
+      role: { $in: roles },
+      approved: true
+    })
+    .select('-password') // Exclude password from results
+    .sort('firstName');
+    
+    return {
+      success: true,
+      users
+    };
+  } catch (error) {
+    console.error('Error getting users by role:', error);
+    return {
+      success: false,
+      message: error.message || 'Failed to get users'
+    };
+  }
+};

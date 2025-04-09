@@ -12,7 +12,21 @@ router.post('/register', redirectIfAuthenticated, authController.register);
 router.get('/logout', authController.logout);
 
 // Approval waiting page
-router.get('/waiting-approval', ensureAuthenticated, authController.waitingApproval);
+router.get('/waiting-approval', (req, res) => {
+  // Only allow access if user is logged in but not approved
+  if (!req.session.user) {
+    return res.redirect('/login');
+  }
+  
+  if (req.session.user.approved) {
+    return res.redirect('/');
+  }
+  
+  res.render('auth/waiting-approval', {
+    title: 'Waiting for Approval',
+    user: req.session.user
+  });
+});
 
 // Protected routes
 router.get('/profile', ensureAuthenticated, authController.profile);

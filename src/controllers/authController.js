@@ -91,36 +91,59 @@ exports.waitingApproval = (req, res) => {
  */
 exports.register = async (req, res) => {
   try {
-    const { firstName, lastName, email, password } = req.body;
-    
-    const result = await authService.registerUser(firstName, lastName, email, password);
-    
-    if (result.success) {
-      req.session.user = {
-        id: result.user._id,
-        firstName: result.user.firstName,
-        lastName: result.user.lastName,
-        email: result.user.email,
-        role: result.user.role,
-        profileImage: result.user.profileImage
-      };
+    const { firstName, lastName, email, password, confirmPassword } = req.body;
+
+    // Validate inputs
+    if (!firstName || !lastName || !email || !password || !confirmPassword) {
+      return res.render('auth/register', {
+        title: 'Register',
+        error: 'All fields are required',
+        form: { firstName, lastName, email }
+      });
+    }
+
+    // Check if passwords match
+    if (password !== confirmPassword) {
+      return res.render('auth/register', {
+        title: 'Register',
+        error: 'Passwords do not match',
+        form: { firstName, lastName, email }
+      });
+    }
+
+    // Register the user through the auth service
+    const result = await authService.register(firstName, lastName, email, password);
+
+    if (!result.success) {
+      return res.render('auth/register', {
+        title: 'Register',
+        error: result.message,
+        form: { firstName, lastName, email }
+      });
+    }
+
+    // Set session data (but mark as not approved if user is a customer)
+    req.session.user = {
+      id: result.user._id,
+      firstName: result.user.firstName,
+      lastName: result.user.lastName,
+      email: result.user.email,
+      role: result.user.role,
+      approved: result.user.approved
+    };
+
+    // Redirect to waiting approval page for customers, or dashboard for employees
+    if (result.user.role === 'customer' && !result.user.approved) {
+      return res.redirect('/waiting-approval');
+    } else {
       return res.redirect('/');
     }
-    
-    res.render('auth/register', {
-      title: 'Register',
-      error: result.message,
-      firstName,
-      lastName,
-      email
-    });
   } catch (error) {
-    res.render('auth/register', {
+    console.error('Error in register:', error);
+    return res.render('auth/register', {
       title: 'Register',
-      error: 'An error occurred during registration.',
-      firstName: req.body.firstName,
-      lastName: req.body.lastName,
-      email: req.body.email
+      error: 'An error occurred during registration',
+      form: req.body
     });
   }
 };

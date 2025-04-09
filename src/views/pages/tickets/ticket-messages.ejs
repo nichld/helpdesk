@@ -1,6 +1,6 @@
-<div id="message-page-container" class="message-page-container">
+<div id="message-page-container" class="flex flex-col h-full w-full">
   <!-- Back button and ticket info -->
-  <div class="message-page-header p-6 bg-neutral-50 border-b border-zinc-200">
+  <div class="p-6 bg-neutral-50 border-b border-zinc-200 flex-shrink-0">
     <div class="flex justify-between items-center">
       <a href="<%= returnUrl %>" class="inline-flex items-center text-sm text-blue-600 hover:text-blue-800">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -35,9 +35,9 @@
   </div>
   
   <!-- Chat container - dynamically sized -->
-  <div class="message-page-content">    
+  <div class="flex flex-col flex-1 overflow-hidden">    
     <!-- Messages area with bubble design -->
-    <div id="messages-container" class="message-page-messages">
+    <div id="messages-container" class="flex-1 overflow-y-auto p-4 scroll-smooth">
       <% if (messages && messages.length > 0) { %>
         <% messages.forEach(message => { 
           let senderId, userId, isOwnMessage;
@@ -52,27 +52,27 @@
             isOwnMessage = false;
           }
         %>
-          <div class="flex <%= isOwnMessage ? 'flex-row-reverse' : '' %> items-start gap-3 mb-4" 
+          <div class="flex <%= isOwnMessage ? 'flex-row-reverse' : '' %> items-start gap-3 mb-4 group" 
                data-message-id="<%= message._id %>"
                data-sender-id="<%= senderId %>"
                data-current-user-id="<%= userId %>"
                data-is-own-message="<%= isOwnMessage %>">
             
             <!-- Message bubble with avatar inside -->
-            <div class="<%= isOwnMessage ? 'bg-blue-100' : 'bg-gray-100' %> message-bubble">
+            <div class="<%= isOwnMessage ? 'bg-blue-100' : 'bg-gray-100' %> rounded-lg p-3 relative max-w-[80%]">
               <!-- Sender info with avatar -->
-              <div class="message-header">
-                <div class="message-avatar">
+              <div class="flex items-center mb-2">
+                <div class="w-8 h-8 rounded-full overflow-hidden bg-gray-200 flex-shrink-0">
                   <% if (message.sender.profileImage) { %>
                     <img src="<%= message.sender.profileImage %>" alt="Avatar" class="w-full h-full object-cover">
                   <% } else { %>
-                    <div class="w-full h-full flex items-center justify-center text-sm font-medium text-gray-500 bg-gray-200">
+                    <div class="w-full h-full flex items-center justify-center text-sm font-medium text-gray-500">
                       <%= message.sender.firstName.charAt(0).toUpperCase() %>
                     </div>
                   <% } %>
                 </div>
                 
-                <span class="message-sender">
+                <span class="ml-2 text-sm font-medium text-gray-700">
                   <%= message.sender.firstName %> <%= message.sender.lastName %>
                 </span>
               </div>
@@ -87,7 +87,7 @@
               <% } %>
               
               <!-- Timestamp (visible on hover) -->
-              <div class="message-timestamp">
+              <div class="text-xs text-gray-500 mt-1 text-right opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                 <%= new Date(message.createdAt).toLocaleString() %>
               </div>
             </div>
@@ -102,7 +102,7 @@
     
     <!-- Message input form -->
     <% if (ticket.status !== 'closed') { %>
-      <div id="message-form" class="message-page-form">
+      <div class="flex-shrink-0 border-t p-4 bg-white">
         <form id="ticket-message-form" class="flex flex-col gap-2">
           <textarea 
             id="message-content" 
@@ -131,12 +131,23 @@
         </form>
       </div>
     <% } else { %>
-      <div class="message-page-form bg-gray-50">
+      <div class="flex-shrink-0 border-t p-4 bg-gray-50">
         <p class="text-center text-gray-600">This ticket is closed. No new messages can be added.</p>
       </div>
     <% } %>
   </div>
 </div>
+
+<!-- Animation for new messages -->
+<style>
+@keyframes highlight-fade {
+  0% { background-color: rgba(59, 130, 246, 0.2); }
+  100% { background-color: transparent; }
+}
+.new-message-highlight {
+  animation: highlight-fade 1.5s ease-out;
+}
+</style>
 
 <script src="/socket.io/socket.io.js"></script>
 <script>
@@ -288,12 +299,12 @@
         : `<div class="w-full h-full flex items-center justify-center text-sm font-medium text-gray-500 bg-gray-200">${message.sender.firstName.charAt(0).toUpperCase()}</div>`;
       
       messageDiv.innerHTML = `
-        <div class="${isOwnMessage ? 'bg-blue-100' : 'bg-gray-100'} message-bubble">
-          <div class="message-header">
-            <div class="message-avatar">
+        <div class="${isOwnMessage ? 'bg-blue-100' : 'bg-gray-100'} rounded-lg p-3 relative max-w-[80%]">
+          <div class="flex items-center mb-2">
+            <div class="w-8 h-8 rounded-full overflow-hidden bg-gray-200 flex-shrink-0">
               ${avatarHtml}
             </div>
-            <span class="message-sender">
+            <span class="ml-2 text-sm font-medium text-gray-700">
               ${escapeHtml(message.sender.firstName)} ${escapeHtml(message.sender.lastName)}
             </span>
           </div>
@@ -302,7 +313,7 @@
             ? `<p class="text-gray-800 whitespace-pre-wrap">${escapeHtml(message.content)}</p>` 
             : `<div class="mt-2"><img src="${message.fileUrl}" alt="Uploaded image" class="max-w-full rounded-md max-h-64"></div>`}
           
-          <div class="message-timestamp">
+          <div class="text-xs text-gray-500 mt-1 text-right opacity-0 group-hover:opacity-100 transition-opacity duration-200">
             ${new Date(message.createdAt).toLocaleString()}
           </div>
         </div>

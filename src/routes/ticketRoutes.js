@@ -45,6 +45,12 @@ router.post('/admin/tickets/:id/message',
   ticketController.addMessage
 );
 
+// Field-specific update route 
+router.post('/admin/tickets/:id/update-field', ensureAuthenticated, ensureEmployee, ticketController.updateTicketField);
+
+// Admin assignment route
+router.post('/admin/tickets/:id/assign', ensureAuthenticated, ensureAdmin, ticketController.adminAssignTicket);
+
 // Admin feedback routes - Change to allow all employee types
 router.get('/admin/feedback', ensureAuthenticated, ensureEmployee, feedbackController.adminFeedback);
 router.get('/admin/feedback/:id', ensureAuthenticated, ensureEmployee, feedbackController.viewFeedbackDetails);

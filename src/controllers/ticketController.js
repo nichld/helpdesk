@@ -130,8 +130,12 @@ exports.customerTicketDetail = async (req, res) => {
  * Customer create ticket view
  */
 exports.createTicketView = (req, res) => {
+  // Import the ticket constants
+  const ticketConstants = require('../config/ticketConstants');
+  
   res.render('tickets/create-ticket', {
-    title: 'Create New Ticket'
+    title: 'Create New Ticket',
+    ticketConstants: ticketConstants
   });
 };
 
@@ -141,6 +145,7 @@ exports.createTicketView = (req, res) => {
 exports.createTicket = async (req, res) => {
   try {
     const { title, description, category, responsibleRole } = req.body;
+    const ticketConstants = require('../config/ticketConstants');
     
     const result = await ticketService.createTicket(
       { title, description, category, responsibleRole },
@@ -151,7 +156,8 @@ exports.createTicket = async (req, res) => {
       return res.render('tickets/create-ticket', {
         title: 'Create New Ticket',
         error: result.message,
-        form: { title, description, category, responsibleRole }
+        form: { title, description, category, responsibleRole },
+        ticketConstants: ticketConstants
       });
     }
     
@@ -159,10 +165,12 @@ exports.createTicket = async (req, res) => {
     res.redirect(`/tickets/${result.ticket._id}`);
   } catch (error) {
     console.error('Error in createTicket:', error);
+    const ticketConstants = require('../config/ticketConstants');
     res.render('tickets/create-ticket', {
       title: 'Create New Ticket',
       error: 'An error occurred while creating the ticket',
-      form: req.body
+      form: req.body,
+      ticketConstants: ticketConstants
     });
   }
 };
@@ -357,6 +365,9 @@ exports.employeeTickets = async (req, res) => {
       );
     }
     
+    // Import the ticket constants to pass to the template
+    const ticketConstants = require('../config/ticketConstants');
+    
     res.render('tickets/employee-tickets', {
       title: 'All Tickets',
       tickets: filteredTickets,
@@ -367,6 +378,7 @@ exports.employeeTickets = async (req, res) => {
         responsibleRole: responsibleRole || 'all',
         search: search || ''
       },
+      ticketConstants: ticketConstants, // Pass the constants to the template
       error: !result.success ? result.message : null
     });
   } catch (error) {
@@ -396,10 +408,14 @@ exports.employeeAssignedTickets = async (req, res) => {
     
     const result = await ticketService.getAllTickets(filters);
     
+    // Import the ticket constants
+    const ticketConstants = require('../config/ticketConstants');
+    
     res.render('tickets/employee-assigned', {
       title: 'My Assigned Tickets',
       tickets: result.success ? result.tickets : [],
       filter: status || 'all',
+      ticketConstants: ticketConstants, // Pass the constants to the template
       error: !result.success ? result.message : null
     });
   } catch (error) {
@@ -435,14 +451,30 @@ exports.employeeTicketDetail = async (req, res) => {
     console.log('Employee viewing ticket - User ID:', req.session.user.id);
     console.log('Employee role:', req.session.user.role);
     
+    // Get employees list for admin assignment dropdown
+    let employees = [];
+    if (req.session.user.role === 'admin') {
+      const authService = require('../services/authService');
+      const employeeRoles = ['employee', 'it-employee', 'support-employee', 'admin'];
+      const employeeResult = await authService.getUsersByRoles(employeeRoles);
+      if (employeeResult.success) {
+        employees = employeeResult.users;
+      }
+    }
+    
+    // Pass ticket constants for consistent UI
+    const ticketConstants = require('../config/ticketConstants');
+    
     res.render('tickets/employee-ticket-detail', {
       title: `Ticket: ${result.ticket.title}`,
       ticket: result.ticket,
       messages: result.messages,
       isEmployee: true,
       user: req.session.user, // Explicitly pass the full user object
+      employees: employees, // Pass all employees for admin dropdown
       success: success,
-      error: error
+      error: error,
+      ticketConstants: ticketConstants // Pass the standardized constants
     });
   } catch (error) {
     console.error('Error in employeeTicketDetail:', error);
@@ -503,7 +535,7 @@ exports.updateTicketEJS = async (req, res) => {
     const { id } = req.params;
     const { status, priority, category, responsibleRole } = req.body;
     
-    // Build update data
+    // Build update data - only include fields that were actually submitted
     const updateData = {};
     if (status) updateData.status = status;
     if (priority) updateData.priority = priority;
@@ -578,7 +610,6 @@ exports.unassignTicket = async (req, res) => {
 exports.ticketMessages = async (req, res) => {
   try {
     const { id } = req.params;
-    
     const result = await ticketService.getTicketById(id);
     
     if (!result.success) {
@@ -593,7 +624,6 @@ exports.ticketMessages = async (req, res) => {
     if (req.session.user.role === 'customer') {
       const customerId = result.ticket.customer._id.toString();
       const userId = req.session.user.id.toString();
-      
       if (customerId !== userId) {
         return res.render('error', {
           title: 'Access Denied',
@@ -605,7 +635,6 @@ exports.ticketMessages = async (req, res) => {
     
     // Determine if user is employee/admin for UI customization
     const isEmployee = req.session.user.role === 'employee' || req.session.user.role === 'admin';
-    
     // Build the appropriate return URL based on user role
     const returnUrl = isEmployee 
       ? `/admin/tickets/${id}`
@@ -642,7 +671,7 @@ exports.deleteTicket = async (req, res) => {
         message: 'Ticket ID is required'
       });
     }
-
+    
     // Only admins can delete tickets
     if (req.session.user.role !== 'admin') {
       return res.status(403).json({
@@ -650,9 +679,9 @@ exports.deleteTicket = async (req, res) => {
         message: 'Only administrators can delete tickets'
       });
     }
-
+    
     const result = await ticketService.deleteTicket(ticketId);
-
+    
     if (result.success) {
       return res.redirect('/admin/tickets?success=' + encodeURIComponent(result.message));
     } else {
@@ -661,5 +690,97 @@ exports.deleteTicket = async (req, res) => {
   } catch (error) {
     console.error('Error deleting ticket:', error);
     res.redirect('/admin/tickets?error=An error occurred while deleting the ticket');
+  }
+};
+
+/**
+ * Update a specific field for a ticket (AJAX)
+ */
+exports.updateTicketField = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { field, value } = req.body;
+    
+    // Validate the field is allowed to be updated
+    const allowedFields = ['status', 'priority', 'category', 'responsibleRole'];
+    if (!allowedFields.includes(field)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid field'
+      });
+    }
+    
+    // Build update data
+    const updateData = {
+      [field]: value
+    };
+    
+    const result = await ticketService.updateTicket(id, updateData);
+    
+    // For AJAX requests
+    if (req.xhr || req.headers['x-requested-with'] === 'XMLHttpRequest') {
+      if (!result.success) {
+        return res.status(400).json({
+          success: false,
+          message: result.message
+        });
+      }
+      
+      return res.json({
+        success: true,
+        ticket: result.ticket
+      });
+    } 
+    // For form submissions
+    else {
+      if (!result.success) {
+        return res.redirect(`/admin/tickets/${id}?error=${encodeURIComponent(result.message)}`);
+      }
+      
+      return res.redirect(`/admin/tickets/${id}?success=Ticket updated successfully`);
+    }
+  } catch (error) {
+    console.error('Error updating ticket field:', error);
+    
+    if (req.xhr || req.headers['x-requested-with'] === 'XMLHttpRequest') {
+      return res.status(500).json({
+        success: false,
+        message: 'An error occurred while updating the ticket'
+      });
+    } else {
+      return res.redirect(`/admin/tickets/${id}?error=An error occurred while updating the ticket`);
+    }
+  }
+};
+
+/**
+ * Admin assign ticket to specific employee
+ */
+exports.adminAssignTicket = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { employeeId } = req.body;
+    
+    // Only admins can use this
+    if (req.session.user.role !== 'admin') {
+      return res.redirect(`/admin/tickets/${id}?error=${encodeURIComponent('Only administrators can assign tickets to specific employees')}`);
+    }
+    
+    // If empty employee ID, that means unassign
+    const updateData = {
+      assignedTo: employeeId ? employeeId : null
+    };
+    
+    const result = await ticketService.updateTicket(id, updateData);
+    
+    if (!result.success) {
+      return res.redirect(`/admin/tickets/${id}?error=${encodeURIComponent(result.message)}`);
+    }
+    
+    // Redirect back to ticket detail with success message
+    return res.redirect(`/admin/tickets/${id}?success=${encodeURIComponent('Ticket assigned successfully')}`);
+  } catch (error) {
+    console.error('Error in adminAssignTicket:', error);
+    return res.redirect(`/admin/tickets/${id}?error=${encodeURIComponent('An error occurred while assigning the ticket')}`);
   }
 };

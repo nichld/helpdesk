@@ -3,21 +3,12 @@
     <h1 class="text-3xl font-bold text-gray-900">
       Feedback Details
     </h1>
-    <% if (isCustomer) { %>
-      <a href="/feedback" class="text-blue-600 hover:text-blue-800 text-sm flex items-center">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-        </svg>
-        Back to my feedback
-      </a>
-    <% } else if (isEmployee) { %>
-      <a href="/admin/feedback" class="text-blue-600 hover:text-blue-800 text-sm flex items-center">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-        </svg>
-        Back to all feedback
-      </a>
-    <% } %>
+    <a href="/admin/feedback" class="text-blue-600 hover:text-blue-800 text-sm flex items-center">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+      </svg>
+      Back to all feedback
+    </a>
   </div>
 
   <div class="bg-white border border-gray-200 rounded-lg p-6 mt-6">
@@ -98,6 +89,31 @@
                   <%= feedback.ticketSnapshot.status ? feedback.ticketSnapshot.status.charAt(0).toUpperCase() + feedback.ticketSnapshot.status.slice(1) : 'Unknown' %>
                 </span>
               </div>
+              
+              <!-- Add ticket link if ticket still exists -->
+              <% if (feedback.ticketId && typeof feedback.ticketId._id !== 'undefined') { %>
+                <div class="mt-2">
+                  <a 
+                    href="/admin/tickets/<%= feedback.ticketId._id %>" 
+                    class="inline-flex items-center px-3 py-1 border border-blue-300 rounded-md text-sm font-medium bg-blue-50 text-blue-700 hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                    </svg>
+                    View Original Ticket
+                  </a>
+                </div>
+              <% } else { %>
+                <div class="mt-2">
+                  <p class="text-amber-700 text-sm bg-amber-50 px-3 py-2 rounded-md border border-amber-200">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 inline-block mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                    The original ticket has been deleted.
+                  </p>
+                </div>
+              <% } %>
             <% } else if (feedback.ticketId) { %>
               <!-- Fall back to ticketId if ticketSnapshot is not available -->
               <div>
@@ -126,6 +142,20 @@
                 <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full <%= statusClass[feedback.ticketId.status] || 'bg-gray-100 text-gray-800' %>">
                   <%= feedback.ticketId.status ? feedback.ticketId.status.charAt(0).toUpperCase() + feedback.ticketId.status.slice(1) : 'Unknown' %>
                 </span>
+              </div>
+              
+              <!-- Add link to view the ticket -->
+              <div class="mt-2">
+                <a 
+                  href="/admin/tickets/<%= feedback.ticketId._id %>" 
+                  class="inline-flex items-center px-3 py-1 border border-blue-300 rounded-md text-sm font-medium bg-blue-50 text-blue-700 hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                  </svg>
+                  View Original Ticket
+                </a>
               </div>
             <% } else { %>
               <p class="text-gray-400 italic">Ticket data not available. The ticket may have been deleted.</p>
