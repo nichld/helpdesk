@@ -38,11 +38,21 @@
       <h1 class="text-2xl font-bold text-gray-900"><%= ticket.title %></h1>
     </div>
     
-    <p class="text-gray-600 mb-6"><%= ticket.description %></p>
-    
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
       <!-- Left column with ticket details -->
       <div class="grid grid-cols-2 gap-y-4 gap-x-8">
+        <!-- Description - now part of the grid -->
+        <div class="col-span-2 mb-4">
+          <p class="text-xs text-gray-500 mb-1">Description</p>
+          <p class="font-medium text-gray-700 whitespace-pre-wrap">
+            <% if (ticket.description && ticket.description.trim()) { %>
+              <%= ticket.description %>
+            <% } else { %>
+              <span class="text-gray-400 italic">No description provided</span>
+            <% } %>
+          </p>
+        </div>
+        
         <div>
           <p class="text-xs text-gray-500">Category</p>
           <p class="font-medium"><%= ticket.category %></p>
@@ -50,7 +60,7 @@
         
         <div>
           <p class="text-xs text-gray-500">Priority</p>
-          <p class="font-medium" data-field="priority">
+          <p class="font-medium">
             <% if (!ticket.priority) { %>
               N/A
             <% } else if (ticket.priority === 'low') { %>
@@ -67,7 +77,7 @@
         
         <div>
           <p class="text-xs text-gray-500">Assigned To</p>
-          <p class="font-medium" data-field="assignedTo">
+          <p class="font-medium">
             <% if (ticket.assignedTo) { %>
               <%= ticket.assignedTo.firstName %> <%= ticket.assignedTo.lastName %>
             <% } else { %>
@@ -92,11 +102,12 @@
         </div>
       </div>
     
-      <!-- Right column with employee actions -->
+      <!-- Right column with employee actions - Now using standard forms -->
       <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
         <h3 class="font-medium text-gray-700 mb-3">Ticket Actions</h3>
         
-        <form id="ticket-actions-form" class="space-y-4">
+        <!-- Update ticket properties form -->
+        <form action="/admin/tickets/<%= ticket._id %>/update" method="POST" class="space-y-4">
           <!-- Status selection -->
           <div>
             <label for="status" class="block text-sm font-medium text-gray-700 mb-1">Status</label>
@@ -132,32 +143,7 @@
             </select>
           </div>
           
-          <!-- Assignment options -->
-          <div>
-            <label class="block text-sm text-gray-600 mb-1">Assign to</label>
-            <div class="space-y-2">
-              <% if (!ticket.assignedTo || ticket.assignedTo._id.toString() !== user.id) { %>
-                <button 
-                  type="button" 
-                  data-action="assignToMe"
-                  class="w-full flex items-center justify-center px-3 py-2 bg-blue-50 text-blue-700 border border-blue-200 rounded-md hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition duration-150"
-                >
-                  Assign to me
-                </button>
-              <% } %>
-              
-              <% if (ticket.assignedTo) { %>
-                <button 
-                  type="button" 
-                  data-action="unassign"
-                  class="w-full flex items-center justify-center px-3 py-2 bg-gray-50 text-gray-700 border border-gray-200 rounded-md hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-opacity-50 transition duration-150"
-                >
-                  Unassign ticket
-                </button>
-              <% } %>
-            </div>
-          </div>
-          
+          <!-- Update ticket button -->
           <button 
             type="submit" 
             class="w-full flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-150"
@@ -166,7 +152,63 @@
           </button>
         </form>
         
-        <div id="save-status" class="mt-3 text-sm"></div>
+        <!-- Assignment options - separate forms for different actions -->
+        <div class="mt-4">
+          <label class="block text-sm text-gray-600 mb-1">Assign to</label>
+          <div class="space-y-2">
+            <% if (!ticket.assignedTo || ticket.assignedTo._id.toString() !== user.id) { %>
+              <form action="/admin/tickets/<%= ticket._id %>/assign-to-me" method="POST">
+                <button 
+                  type="submit" 
+                  class="w-full flex items-center justify-center px-3 py-2 bg-blue-50 text-blue-700 border border-blue-200 rounded-md hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition duration-150"
+                >
+                  Assign to me
+                </button>
+              </form>
+            <% } %>
+            
+            <% if (ticket.assignedTo) { %>
+              <form action="/admin/tickets/<%= ticket._id %>/unassign" method="POST">
+                <button 
+                  type="submit" 
+                  class="w-full flex items-center justify-center px-3 py-2 bg-gray-50 text-gray-700 border border-gray-200 rounded-md hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-opacity-50 transition duration-150"
+                >
+                  Unassign ticket
+                </button>
+              </form>
+            <% } %>
+          </div>
+        </div>
+        
+        <!-- Delete ticket option (admin only) -->
+        <% if (locals.isAdmin && (ticket.status === 'solved' || ticket.status === 'closed')) { %>
+          <div class="mt-4">
+            <form action="/admin/tickets/delete" method="POST" onsubmit="return confirm('Are you sure you want to delete this ticket? This action cannot be undone and will delete all associated messages.');">
+              <input type="hidden" name="ticketId" value="<%= ticket._id %>">
+              <button 
+                type="submit" 
+                class="w-full flex items-center justify-center px-3 py-2 border border-red-300 rounded-md text-sm font-medium bg-red-50 text-red-700 hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+                Delete Ticket
+              </button>
+            </form>
+          </div>
+        <% } %>
+        
+        <% if (success) { %>
+          <div class="mt-3 text-sm text-green-600">
+            <%= success %>
+          </div>
+        <% } %>
+        
+        <% if (error) { %>
+          <div class="mt-3 text-sm text-red-600">
+            <%= error %>
+          </div>
+        <% } %>
       </div>
     </div>
   </div>
@@ -176,18 +218,16 @@
     <div class="p-6 border-b border-gray-200">
       <div class="flex justify-between items-center">
         <h2 class="text-xl font-semibold">Messages</h2>
-        
         <a href="/admin/tickets/<%= ticket._id %>/messages" 
            class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium flex items-center transition duration-150"
            target="_blank">
           <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
-            <path fill-rule="evenodd" d="M18 10c0 3.866-3.582 7-8 7a8.841 8.841 0 01-4.083-.98L2 17l1.338-3.123C2.493 12.767 2 11.434 2 10c0-3.866 3.582-7 8-7s8 3.134 8 7zM7 9H5v2h2V9zm8 0h-2v2h2V9zM9 9h2v2H9V9z" clip-rule="evenodd" />
+            <path fill-rule="evenodd" d="M18 10c0 3.866-3.582 7-8 7a8.841 8.841 8.841 0 01-4.083-.98L2 17l1.338-3.123C2.493 12.767 2 11.434 2 10c0-3.866 3.582-7 8-7s8 3.134 8 7zM7 9H5v2h2V9zm8 0h-2v2h2V9zM9 9h2v2H9V9z" clip-rule="evenodd" />
           </svg>
           View Messages
         </a>
       </div>
     </div>
-    
     <div class="p-6">
       <% if (messages && messages.length > 0) { %>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
@@ -195,7 +235,6 @@
             <p class="text-sm text-gray-500 mb-1">Last activity</p>
             <p class="text-gray-700"><%= new Date(ticket.lastActivity).toLocaleString() %></p>
           </div>
-          
           <div>
             <p class="text-sm text-gray-500 mb-1">Total messages</p>
             <p class="text-gray-700"><%= messages.length %></p>
@@ -266,108 +305,3 @@
     </div>
   </div>
 </div>
-
-<script>
-  document.addEventListener('DOMContentLoaded', function() {
-    // Update ticket form
-    const form = document.getElementById('ticket-actions-form');
-    
-    if (form) {
-      // Handle assign to me button
-      const assignButton = document.querySelector('[data-action="assignToMe"]');
-      if (assignButton) {
-        assignButton.addEventListener('click', function() {
-          saveTicketChanges({ assignTo: 'me' });
-        });
-      }
-      
-      // Handle unassign button
-      const unassignButton = document.querySelector('[data-action="unassign"]');
-      if (unassignButton) {
-        unassignButton.addEventListener('click', function() {
-          saveTicketChanges({ assignTo: 'none' });
-        });
-      }
-      
-      // Handle form submission
-      form.addEventListener('submit', function(e) {
-        e.preventDefault();
-        
-        // Get form values
-        const status = document.getElementById('status').value;
-        const priority = document.getElementById('priority').value;
-        const category = document.getElementById('category').value;
-        
-        saveTicketChanges({ status, priority, category });
-      });
-    }
-    
-    // Function to save ticket changes
-    function saveTicketChanges(data) {
-      const saveStatus = document.getElementById('save-status');
-      saveStatus.textContent = 'Saving changes...';
-      saveStatus.className = 'mt-3 text-sm text-blue-600';
-      
-      fetch('/admin/tickets/<%= ticket._id %>/update', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data)
-      })
-      .then(response => response.json())
-      .then(data => {
-        if (data.success) {
-          saveStatus.textContent = 'Changes saved successfully!';
-          saveStatus.className = 'mt-3 text-sm text-green-600';
-          
-          // Update UI with new values
-          updateTicketUI(data.ticket);
-          
-          // Clear success message after 3 seconds
-          setTimeout(() => {
-            saveStatus.textContent = '';
-          }, 3000);
-        } else {
-          saveStatus.textContent = 'Error: ' + data.message;
-          saveStatus.className = 'mt-3 text-sm text-red-600';
-        }
-      })
-      .catch(error => {
-        console.error('Error:', error);
-        saveStatus.textContent = 'An error occurred while saving changes';
-        saveStatus.className = 'mt-3 text-sm text-red-600';
-      });
-    }
-    
-    // Function to update ticket UI after changes
-    function updateTicketUI(ticket) {
-      // Update status display
-      const status = document.getElementById('status');
-      if (status) status.value = ticket.status;
-      
-      // Update priority display
-      const priority = document.getElementById('priority');
-      if (priority) priority.value = ticket.priority || '';
-      
-      // Update category display
-      const category = document.getElementById('category');
-      if (category) category.value = ticket.category;
-      
-      // Update assigned to field
-      const assignedToField = document.querySelector('[data-field="assignedTo"]');
-      if (assignedToField) {
-        if (ticket.assignedTo) {
-          assignedToField.textContent = `${ticket.assignedTo.firstName} ${ticket.assignedTo.lastName}`;
-        } else {
-          assignedToField.textContent = 'N/A';
-        }
-      }
-      
-      // Reload the page to reflect all changes correctly, especially for assignment actions
-      setTimeout(() => {
-        window.location.reload();
-      }, 1000);
-    }
-  });
-</script>

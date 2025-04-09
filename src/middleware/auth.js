@@ -28,6 +28,8 @@ exports.ensureAuthenticated = (req, res, next) => {
       return res.redirect('/waiting-approval');
     }
     
+    // Provide isAdmin flag to templates
+    res.locals.isAdmin = req.session.user.role === 'admin';
     return next();
   } else {
     if (req.xhr || req.path.includes('/api/') || (req.headers.accept && req.headers.accept.includes('application/json'))) {

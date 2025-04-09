@@ -124,9 +124,19 @@ exports.updateTicket = async (ticketId, updateData) => {
       };
     }
     
+    // Only allow specific fields to be updated (remove description)
+    const validFields = ['status', 'priority', 'category', 'assignedTo'];
+    const filteredData = {};
+    
+    Object.keys(updateData).forEach(key => {
+      if (validFields.includes(key)) {
+        filteredData[key] = updateData[key];
+      }
+    });
+    
     const ticket = await Ticket.findByIdAndUpdate(
       ticketId,
-      { ...updateData, lastActivity: Date.now() },
+      { ...filteredData, lastActivity: Date.now() },
       { new: true }
     )
     .populate('customer', 'firstName lastName email profileImage')
@@ -273,6 +283,49 @@ exports.getTicketStats = async () => {
     return {
       success: false,
       message: error.message || 'Failed to get ticket statistics'
+    };
+  }
+};
+
+/**
+ * Delete a ticket (admin only)
+ * @param {string} ticketId - ID of ticket to delete
+ * @returns {Object} Delete result
+ */
+exports.deleteTicket = async (ticketId) => {
+  try {
+    const ticket = await Ticket.findById(ticketId);
+    
+    if (!ticket) {
+      return {
+        success: false,
+        message: 'Ticket not found'
+      };
+    }
+    
+    // Only allow deletion of solved or closed tickets
+    if (ticket.status !== 'solved' && ticket.status !== 'closed') {
+      return {
+        success: false,
+        message: 'Only solved or closed tickets can be deleted'
+      };
+    }
+    
+    // Delete associated messages
+    await Message.deleteMany({ ticket: ticketId });
+    
+    // Delete the ticket
+    await Ticket.findByIdAndDelete(ticketId);
+    
+    return {
+      success: true,
+      message: 'Ticket successfully deleted'
+    };
+  } catch (error) {
+    console.error('Ticket deletion error:', error);
+    return {
+      success: false,
+      message: 'An error occurred while deleting the ticket'
     };
   }
 };

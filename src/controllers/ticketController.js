@@ -6,35 +6,47 @@ const path = require('path');
  */
 exports.customerTickets = async (req, res) => {
   try {
-    const { status } = req.query;
+    const { status, search } = req.query;
     
-    // Get tickets for the current customer
-    const result = await ticketService.getAllTickets({
-      customer: req.session.user.id,
-      status: status || undefined
-    });
+    // Build filter object
+    const filters = {
+      customer: req.session.user.id // Always filter by current customer
+    };
     
-    if (!result.success) {
-      return res.render('tickets/customer-tickets', {
-        title: 'My Tickets',
-        error: result.message,
-        tickets: [],
-        filter: status || 'all'
-      });
+    if (status && status !== 'all') {
+      filters.status = status;
+    }
+    
+    // Get tickets for the current customer with filters
+    const result = await ticketService.getAllTickets(filters);
+    
+    // Handle search filtering in memory if search is provided
+    let filteredTickets = result.success ? result.tickets : [];
+    if (search && search.trim() && filteredTickets.length > 0) {
+      const searchTerm = search.trim().toLowerCase();
+      filteredTickets = filteredTickets.filter(ticket => 
+        ticket.title.toLowerCase().includes(searchTerm) || 
+        (ticket.description && ticket.description.toLowerCase().includes(searchTerm))
+      );
     }
     
     res.render('tickets/customer-tickets', {
       title: 'My Tickets',
-      tickets: result.tickets,
-      filter: status || 'all'
+      tickets: filteredTickets,
+      filters: {
+        status: status || 'all',
+        search: search || ''
+      },
+      error: !result.success ? result.message : null,
+      success: req.query.success || null
     });
   } catch (error) {
     console.error('Error in customerTickets:', error);
     res.render('tickets/customer-tickets', {
       title: 'My Tickets',
-      error: 'An error occurred while loading your tickets',
       tickets: [],
-      filter: 'all'
+      filters: { status: 'all', search: '' },
+      error: 'An error occurred while loading your tickets'
     });
   }
 };
@@ -278,11 +290,17 @@ exports.employeeDashboard = async (req, res) => {
       status: ['open', 'in-progress']
     });
     
+    // Get tickets assigned to the current employee
+    const assignedResult = await ticketService.getAllTickets({
+      assignedTo: req.session.user.id
+    });
+    
     res.render('tickets/employee-dashboard', {
       title: 'Ticket Dashboard',
       stats: statsResult.success ? statsResult.stats : null,
       tickets: ticketsResult.success ? ticketsResult.tickets.slice(0, 10) : [],
-      error: (!statsResult.success || !ticketsResult.success) ? 
+      assignedTickets: assignedResult.success ? assignedResult.tickets : [],
+      error: (!statsResult.success || !ticketsResult.success || !assignedResult.success) ? 
         'Some data could not be loaded' : null
     });
   } catch (error) {
@@ -291,6 +309,7 @@ exports.employeeDashboard = async (req, res) => {
       title: 'Ticket Dashboard',
       stats: null,
       tickets: [],
+      assignedTickets: [],
       error: 'An error occurred while loading the dashboard'
     });
   }
@@ -371,6 +390,7 @@ exports.employeeAssignedTickets = async (req, res) => {
 exports.employeeTicketDetail = async (req, res) => {
   try {
     const { id } = req.params;
+    const { success, error } = req.query;
     
     const result = await ticketService.getTicketById(id);
     
@@ -378,9 +398,7 @@ exports.employeeTicketDetail = async (req, res) => {
       return res.render('error', {
         title: 'Ticket Not Found',
         message: result.message,
-        error: {
-          status: 404
-        }
+        error: { status: 404 }
       });
     }
     
@@ -393,16 +411,16 @@ exports.employeeTicketDetail = async (req, res) => {
       ticket: result.ticket,
       messages: result.messages,
       isEmployee: true,
-      user: req.session.user // Explicitly pass the full user object
+      user: req.session.user, // Explicitly pass the full user object
+      success: success,
+      error: error
     });
   } catch (error) {
     console.error('Error in employeeTicketDetail:', error);
     res.render('error', {
       title: 'Error',
       message: 'An error occurred while loading the ticket',
-      error: {
-        status: 500
-      }
+      error: { status: 500 }
     });
   }
 };
@@ -449,6 +467,82 @@ exports.updateTicket = async (req, res) => {
 };
 
 /**
+ * Update ticket with traditional form submission (EJS)
+ */
+exports.updateTicketEJS = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status, priority, category } = req.body;
+    
+    // Build update data
+    const updateData = {};
+    if (status) updateData.status = status;
+    if (priority) updateData.priority = priority;
+    if (category) updateData.category = category;
+    
+    const result = await ticketService.updateTicket(id, updateData);
+    
+    if (!result.success) {
+      return res.redirect(`/admin/tickets/${id}?error=${encodeURIComponent(result.message)}`);
+    }
+    
+    // Redirect back to the ticket with success message
+    return res.redirect(`/admin/tickets/${id}?success=Ticket updated successfully`);
+  } catch (error) {
+    console.error('Error in updateTicketEJS:', error);
+    return res.redirect(`/admin/tickets/${id}?error=An error occurred while updating the ticket`);
+  }
+};
+
+/**
+ * Assign ticket to current employee
+ */
+exports.assignTicketToMe = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updateData = {
+      assignedTo: req.session.user.id
+    };
+    
+    const result = await ticketService.updateTicket(id, updateData);
+    
+    if (!result.success) {
+      return res.redirect(`/admin/tickets/${id}?error=${encodeURIComponent(result.message)}`);
+    }
+    
+    // Redirect back to the ticket with success message
+    return res.redirect(`/admin/tickets/${id}?success=Ticket assigned to you successfully`);
+  } catch (error) {
+    console.error('Error in assignTicketToMe:', error);
+    return res.redirect(`/admin/tickets/${id}?error=An error occurred while assigning the ticket`);
+  }
+};
+
+/**
+ * Unassign ticket
+ */
+exports.unassignTicket = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updateData = {
+      assignedTo: null
+    };
+    
+    const result = await ticketService.updateTicket(id, updateData);
+    
+    if (!result.success) {
+      return res.redirect(`/admin/tickets/${id}?error=${encodeURIComponent(result.message)}`);
+    }
+    
+    // Redirect back to the ticket with success message
+    return res.redirect(`/admin/tickets/${id}?success=Ticket unassigned successfully`);
+  } catch (error) {
+    console.error('Error in unassignTicket:', error);
+    return res.redirect(`/admin/tickets/${id}?error=An error occurred while unassigning the ticket`);
+  }
+};
+
+/**
  * Ticket messages view - shared between customer and employee
  */
 exports.ticketMessages = async (req, res) => {
@@ -486,7 +580,7 @@ exports.ticketMessages = async (req, res) => {
     const returnUrl = isEmployee 
       ? `/admin/tickets/${id}`
       : `/tickets/${id}`;
-      
+    
     res.render('tickets/ticket-messages', {
       title: `Messages for Ticket: ${result.ticket.title}`,
       ticket: result.ticket,
@@ -502,5 +596,40 @@ exports.ticketMessages = async (req, res) => {
       message: 'An error occurred while loading ticket messages',
       error: { status: 500 }
     });
+  }
+};
+
+/**
+ * Delete a ticket (admin only)
+ */
+exports.deleteTicket = async (req, res) => {
+  try {
+    const { ticketId } = req.body;
+    
+    if (!ticketId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Ticket ID is required'
+      });
+    }
+
+    // Only admins can delete tickets
+    if (req.session.user.role !== 'admin') {
+      return res.status(403).json({
+        success: false,
+        message: 'Only administrators can delete tickets'
+      });
+    }
+
+    const result = await ticketService.deleteTicket(ticketId);
+
+    if (result.success) {
+      return res.redirect('/admin/tickets?success=' + encodeURIComponent(result.message));
+    } else {
+      return res.redirect('/admin/tickets?error=' + encodeURIComponent(result.message));
+    }
+  } catch (error) {
+    console.error('Error deleting ticket:', error);
+    res.redirect('/admin/tickets?error=An error occurred while deleting the ticket');
   }
 };

@@ -22,10 +22,13 @@
                 <a href="/tickets/create" class="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200">
                   Create Ticket
                 </a>
+                <a href="/feedback" class="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200">
+                  My Feedback
+                </a>
               <% } %>
               
               <!-- Employee Navigation -->
-              <% if (user.role === 'employee') { %>
+              <% if (user.role === 'employee' || user.role === 'it-employee' || user.role === 'support-employee') { %>
                 <a href="/admin/dashboard" class="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200">
                   Dashboard
                 </a>
@@ -34,6 +37,9 @@
                 </a>
                 <a href="/admin/tickets/assigned" class="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200">
                   My Assigned
+                </a>
+                <a href="/admin/feedback" class="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200">
+                  Feedback
                 </a>
               <% } %>
               
@@ -47,6 +53,9 @@
                 </a>
                 <a href="/admin/tickets/assigned" class="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200">
                   My Assigned
+                </a>
+                <a href="/admin/feedback" class="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200">
+                  Feedback
                 </a>
                 <a href="/users" class="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200">
                   Users
@@ -113,16 +122,19 @@
                   <% if (user.role === 'customer') { %>
                     <a href="/tickets" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" role="menuitem">My Tickets</a>
                     <a href="/tickets/create" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" role="menuitem">Create Ticket</a>
+                    <a href="/feedback" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" role="menuitem">My Feedback</a>
                   <% } %>
                   
                   <!-- Employee/Admin dropdown links -->
-                  <% if (user.role === 'employee' || user.role === 'admin') { %>
+                  <% if (user.role === 'employee' || user.role === 'it-employee' || user.role === 'support-employee' || user.role === 'admin') { %>
                     <a href="/admin/dashboard" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" role="menuitem">Dashboard</a>
                     <a href="/admin/tickets" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" role="menuitem">All Tickets</a>
                     <a href="/admin/tickets/assigned" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" role="menuitem">My Assigned</a>
+                    <a href="/admin/feedback" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" role="menuitem">Feedback</a>
                   <% } %>
                   
                   <% if (user.role === 'admin') { %>
+                    <a href="/admin/feedback" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" role="menuitem">Feedback</a>
                     <a href="/users" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" role="menuitem">Manage Users</a>
                   <% } %>
                   <a href="/logout" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" role="menuitem">Sign out</a>
@@ -171,10 +183,13 @@
             <a href="/tickets/create" class="text-gray-600 hover:text-gray-900 block px-3 py-2 rounded-md text-base font-medium">
               Create Ticket
             </a>
+            <a href="/feedback" class="text-gray-600 hover:text-gray-900 block px-3 py-2 rounded-md text-base font-medium">
+              My Feedback
+            </a>
           <% } %>
           
           <!-- Mobile Employee/Admin Links -->
-          <% if (user.role === 'employee' || user.role === 'admin') { %>
+          <% if (user.role === 'employee' || user.role === 'it-employee' || user.role === 'support-employee' || user.role === 'admin') { %>
             <a href="/admin/dashboard" class="text-gray-600 hover:text-gray-900 block px-3 py-2 rounded-md text-base font-medium">
               Dashboard
             </a>
@@ -184,12 +199,18 @@
             <a href="/admin/tickets/assigned" class="text-gray-600 hover:text-gray-900 block px-3 py-2 rounded-md text-base font-medium">
               My Assigned
             </a>
+            <a href="/admin/feedback" class="text-gray-600 hover:text-gray-900 block px-3 py-2 rounded-md text-base font-medium">
+              Feedback
+            </a>
           <% } %>
           
           <!-- Mobile Admin Links -->
           <% if (user.role === 'admin') { %>
             <a href="/users" class="text-gray-600 hover:text-gray-900 block px-3 py-2 rounded-md text-base font-medium">
               Manage Users
+            </a>
+            <a href="/admin/feedback" class="text-gray-600 hover:text-gray-900 block px-3 py-2 rounded-md text-base font-medium">
+              Feedback
             </a>
           <% } %>
           

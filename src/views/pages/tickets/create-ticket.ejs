@@ -1,8 +1,18 @@
-<div class="flex flex-col gap-6 max-w-2xl mx-auto">
-  <h1 class="text-2xl font-bold text-gray-900">Create New Support Ticket</h1>
+<div class="flex flex-col gap-6">
+  <div class="flex justify-between items-center">
+    <h1 class="text-3xl font-bold text-gray-900">
+      Create New Support Ticket
+    </h1>
+    <a href="/tickets" class="text-blue-600 hover:text-blue-800 text-sm flex items-center">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+      </svg>
+      Back to tickets
+    </a>
+  </div>
   
   <% if (typeof error !== 'undefined' && error) { %>
-    <div class="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-md text-sm mb-4">
+    <div class="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-md text-sm mb-6">
       <%= error %>
     </div>
   <% } %>
@@ -16,7 +26,7 @@
           type="text" 
           id="title" 
           name="title" 
-          class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           required
           minlength="5"
           maxlength="100"
@@ -29,7 +39,7 @@
         <select 
           id="category" 
           name="category" 
-          class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           required
         >
           <option value="" disabled <%= typeof form === 'undefined' || !form.category ? 'selected' : '' %>>Select a category</option>
@@ -48,7 +58,7 @@
           id="description" 
           name="description" 
           rows="6" 
-          class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           required
           minlength="10"
         ><%= typeof form !== 'undefined' && form.description ? form.description : '' %></textarea>
@@ -57,13 +67,13 @@
       <div class="flex justify-between items-center pt-4">
         <a 
           href="/tickets" 
-          class="px-4 py-2 border border-gray-300 rounded-md text-sm text-gray-700 hover:bg-gray-50"
+          class="px-4 py-2 border border-gray-300 rounded-md text-sm text-gray-700 hover:bg-gray-50 transition-colors"
         >
           Cancel
         </a>
         <button 
           type="submit" 
-          class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-sm font-medium"
+          class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-sm font-medium transition-colors"
         >
           Create Ticket
         </button>
