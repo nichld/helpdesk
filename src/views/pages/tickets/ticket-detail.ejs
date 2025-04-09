@@ -191,62 +191,28 @@
   <% if ((ticket.status === 'solved' || ticket.status === 'closed') && !isEmployee) { %>
     <div class="mt-6">
       <div class="bg-blue-50 border border-blue-200 rounded-lg p-6">
-        <h2 class="text-lg font-medium text-blue-800">How was your support experience?</h2>
-        <p class="mt-1 text-sm text-blue-600">Your feedback helps us improve our support services.</p>
-        
-        <div class="mt-4 flex justify-between items-center">
-          <button 
-            id="view-feedback-form"
-            class="inline-flex items-center px-4 py-2 border border-blue-300 rounded-md text-sm font-medium bg-white text-blue-700 hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"></path>
-            </svg>
-            <span id="feedback-button-text">Provide Feedback</span>
-          </button>
-          <div id="feedback-status" class="text-sm text-blue-600 hidden">
-            Checking feedback status...
+        <% if (hasFeedback) { %>
+          <!-- Show thank you message if customer already provided feedback -->
+          <h2 class="text-lg font-medium text-blue-800">Thank you for your feedback!</h2>
+          <p class="mt-1 text-sm text-blue-600">Your input helps us improve our support services.</p>
+        <% } else { %>
+          <!-- Show feedback form link if no feedback submitted yet -->
+          <h2 class="text-lg font-medium text-blue-800">How was your support experience?</h2>
+          <p class="mt-1 text-sm text-blue-600">Your feedback helps us improve our support services.</p>
+          
+          <div class="mt-4 flex justify-between items-center">
+            <a 
+              href="/tickets/<%= ticket._id %>/feedback"
+              class="inline-flex items-center px-4 py-2 border border-blue-300 rounded-md text-sm font-medium bg-white text-blue-700 hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976-2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"></path>
+              </svg>
+              Provide Feedback
+            </a>
           </div>
-        </div>
+        <% } %>
       </div>
     </div>
-
-    <script>
-      document.addEventListener('DOMContentLoaded', function() {
-        const viewFeedbackFormBtn = document.getElementById('view-feedback-form');
-        const feedbackButtonText = document.getElementById('feedback-button-text');
-        const feedbackStatus = document.getElementById('feedback-status');
-        
-        if (viewFeedbackFormBtn) {
-          // Check if feedback has already been submitted
-          fetch('/tickets/<%= ticket._id %>/feedback/check')
-            .then(response => response.json())
-            .then(data => {
-              if (data.success && data.hasFeedback) {
-                feedbackButtonText.textContent = 'View Submitted Feedback';
-                feedbackStatus.classList.remove('hidden');
-                feedbackStatus.textContent = 'Thanks for your feedback!';
-                
-                // Update button click handler to view feedback instead of submitting
-                viewFeedbackFormBtn.addEventListener('click', function() {
-                  window.location.href = '/feedback';
-                });
-              } else {
-                // No feedback submitted yet, set up submission handler
-                viewFeedbackFormBtn.addEventListener('click', function() {
-                  window.location.href = '/tickets/<%= ticket._id %>/feedback';
-                });
-              }
-            })
-            .catch(error => {
-              console.error('Error checking feedback status:', error);
-              // Default to submission handler if check fails
-              viewFeedbackFormBtn.addEventListener('click', function() {
-                window.location.href = '/tickets/<%= ticket._id %>/feedback';
-              });
-            });
-        }
-      });
-    </script>
   <% } %>
 </div>

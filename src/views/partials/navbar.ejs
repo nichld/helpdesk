@@ -22,9 +22,6 @@
                 <a href="/tickets/create" class="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200">
                   Create Ticket
                 </a>
-                <a href="/feedback" class="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200">
-                  My Feedback
-                </a>
               <% } %>
               
               <!-- Employee Navigation -->
@@ -122,7 +119,6 @@
                   <% if (user.role === 'customer') { %>
                     <a href="/tickets" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" role="menuitem">My Tickets</a>
                     <a href="/tickets/create" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" role="menuitem">Create Ticket</a>
-                    <a href="/feedback" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" role="menuitem">My Feedback</a>
                   <% } %>
                   
                   <!-- Employee/Admin dropdown links -->
@@ -182,9 +178,6 @@
             </a>
             <a href="/tickets/create" class="text-gray-600 hover:text-gray-900 block px-3 py-2 rounded-md text-base font-medium">
               Create Ticket
-            </a>
-            <a href="/feedback" class="text-gray-600 hover:text-gray-900 block px-3 py-2 rounded-md text-base font-medium">
-              My Feedback
             </a>
           <% } %>
           

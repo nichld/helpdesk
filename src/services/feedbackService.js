@@ -2,6 +2,7 @@ const Feedback = require('../models/Feedback');
 const Ticket = require('../models/Ticket');
 const User = require('../models/User');
 const Message = require('../models/Message');
+const mongoose = require('mongoose');
 
 /**
  * Submit feedback for a ticket
@@ -132,55 +133,58 @@ exports.getTicketFeedback = async (ticketId) => {
 };
 
 /**
- * Get all feedback with filtering and pagination
+ * Get all feedback with optional filters
  */
-exports.getAllFeedback = async (filters = {}, page = 1, limit = 10) => {
+exports.getAllFeedback = async (filters = {}) => {
   try {
-    const query = {};
-    const skip = (page - 1) * limit;
+    console.log('Getting all feedback with filters:', filters);
     
-    // Apply filters
+    // Build query
+    const query = {};
+    
     if (filters.rating) {
-      query.rating = parseInt(filters.rating);
+      query.rating = filters.rating;
     }
     
     if (filters.satisfactionLevel) {
       query.satisfactionLevel = filters.satisfactionLevel;
     }
     
-    // Search in comments or ticket title
-    if (filters.search) {
-      query.$or = [
-        { comments: { $regex: filters.search, $options: 'i' } },
-        { 'ticketSnapshot.title': { $regex: filters.search, $options: 'i' } }
-      ];
-    }
+    // Get all feedback with corrected population
+    const feedbacks = await Feedback.find(query)
+      // If you need to populate ticketId, use this instead of 'ticket'
+      .populate({
+        path: 'ticketId', 
+        select: 'title customer status',
+        populate: {
+          path: 'customer',
+          select: 'firstName lastName email'
+        }
+      })
+      .sort({ submittedAt: -1 });
     
-    // Get total count for pagination
-    const total = await Feedback.countDocuments(query);
+    console.log(`Found ${feedbacks.length} feedbacks`);
     
-    // Get feedback entries with pagination
-    const feedback = await Feedback.find(query)
-      .populate('submittedBy', 'firstName lastName email')
-      .sort({ submittedAt: -1 })
-      .skip(skip)
-      .limit(limit);
+    // Process each feedback
+    const processedFeedbacks = feedbacks.map(feedback => {
+      // Convert to plain object to allow adding new properties
+      const feedbackObj = feedback.toObject();
+      
+      // We're assuming ticketSnapshot already contains the necessary data
+      // No need to create it from ticketId 
+      
+      return feedbackObj;
+    });
     
     return {
       success: true,
-      feedback,
-      pagination: {
-        total,
-        page,
-        limit,
-        pages: Math.ceil(total / limit)
-      }
+      feedbacks: processedFeedbacks
     };
   } catch (error) {
     console.error('Error getting all feedback:', error);
     return {
       success: false,
-      message: 'An error occurred while retrieving feedback'
+      message: error.message || 'Failed to get feedback'
     };
   }
 };
@@ -236,34 +240,48 @@ exports.getFeedbackStats = async () => {
 /**
  * Get feedback by ID
  */
-exports.getFeedbackById = async (feedbackId) => {
+exports.getFeedbackById = async (id) => {
   try {
-    const feedback = await Feedback.findById(feedbackId)
-      .populate('submittedBy', 'firstName lastName email')
-      .populate('ticketId');
+    console.log(`Getting feedback by ID: ${id}`);
+    
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return {
+        success: false,
+        message: 'Invalid feedback ID format'
+      };
+    }
+    
+    // Changed 'ticket' to 'ticketId' to match the schema field name
+    const feedback = await Feedback.findById(id)
+      .populate({
+        path: 'ticketId',  // Changed from 'ticket' to 'ticketId'
+        select: 'title customer status description',
+        populate: {
+          path: 'customer',
+          select: 'firstName lastName email'
+        }
+      })
+      .populate('submittedBy', 'firstName lastName email');
     
     if (!feedback) {
+      console.log(`Feedback not found with ID: ${id}`);
       return {
         success: false,
         message: 'Feedback not found'
       };
     }
     
-    // Ensure messageHistory is loaded and sorted by sentAt date
-    if (feedback.messageHistory && feedback.messageHistory.length > 0) {
-      // Sort messages by date if they exist
-      feedback.messageHistory.sort((a, b) => new Date(a.sentAt) - new Date(b.sentAt));
-    }
+    console.log('Feedback found:', feedback._id);
     
     return {
       success: true,
       feedback
     };
   } catch (error) {
-    console.error('Error getting feedback by ID:', error);
+    console.error(`Error getting feedback by ID ${id}:`, error);
     return {
       success: false,
-      message: 'An error occurred while retrieving feedback'
+      message: error.message || 'Failed to get feedback'
     };
   }
 };

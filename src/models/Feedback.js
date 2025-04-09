@@ -25,25 +25,8 @@ const FeedbackSchema = new mongoose.Schema({
     required: true
   },
   ticketSnapshot: {
-    title: String,
-    description: String,
-    category: String,
-    status: String,
-    priority: String,
-    createdAt: Date,
-    closedAt: Date,
-    customer: {
-      _id: mongoose.Schema.Types.ObjectId,
-      firstName: String,
-      lastName: String,
-      email: String
-    },
-    assignedTo: {
-      _id: mongoose.Schema.Types.ObjectId,
-      firstName: String,
-      lastName: String,
-      email: String
-    }
+    type: Object,
+    required: true
   },
   messageCount: {
     type: Number,

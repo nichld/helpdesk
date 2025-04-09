@@ -26,10 +26,6 @@ router.get('/tickets/:id/feedback/check', ensureAuthenticated, async (req, res) 
   return res.json({ success: true, hasFeedback: !!result.feedback });
 });
 
-// Customer feedback access
-router.get('/feedback', ensureAuthenticated, feedbackController.customerFeedbackList);
-router.get('/feedback/:id', ensureAuthenticated, feedbackController.viewFeedbackDetails);
-
 // Employee routes
 router.get('/admin/dashboard', ensureAuthenticated, ensureEmployee, ticketController.employeeDashboard);
 router.get('/admin/tickets', ensureAuthenticated, ensureEmployee, ticketController.employeeTickets);

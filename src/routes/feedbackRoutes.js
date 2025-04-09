@@ -4,11 +4,7 @@ const feedbackController = require('../controllers/feedbackController');
 const { ensureAuthenticated, ensureAdmin, ensureEmployee } = require('../middleware/auth');
 const feedbackService = require('../services/feedbackService');
 
-// Customer feedback routes
-router.get('/feedback', ensureAuthenticated, feedbackController.customerFeedbackList);
-router.get('/feedback/:id', ensureAuthenticated, feedbackController.viewFeedbackDetails);
-
-// Ticket feedback submission
+// Ticket feedback submission - keep these as they're needed for the "Thank you for your feedback" flow
 router.get('/tickets/:id/feedback', ensureAuthenticated, feedbackController.renderFeedbackForm);
 router.post('/tickets/:id/feedback', ensureAuthenticated, feedbackController.submitFeedback);
 router.get('/tickets/:id/feedback/check', ensureAuthenticated, async (req, res) => {

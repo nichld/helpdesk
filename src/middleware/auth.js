@@ -68,21 +68,33 @@ exports.ensureEmployee = (req, res, next) => {
   console.log('Employee check - Role:', req.session.user ? req.session.user.role : 'No user');
   
   const employeeRoles = ['employee', 'it-employee', 'support-employee', 'admin'];
-  if (req.session.user && employeeRoles.includes(req.session.user.role)) {
-    return next();
-  } else {
-    if (req.xhr || req.path.includes('/api/') || req.headers.accept.includes('application/json')) {
-      return res.status(403).json({ 
+  
+  if (!req.session.user) {
+    if (req.xhr || req.path.includes('/api/')) {
+      return res.status(401).json({ 
         success: false, 
-        message: 'Only employees can perform this action' 
+        message: 'You must be logged in to access this resource' 
       });
     }
-    return res.render('error', {
-      title: 'Access Denied',
-      message: 'You do not have permission to access this page',
-      error: { status: 403 }
+    return res.redirect('/login');
+  }
+  
+  if (employeeRoles.includes(req.session.user.role)) {
+    return next();
+  }
+  
+  if (req.xhr || req.path.includes('/api/') || (req.headers.accept && req.headers.accept.includes('application/json'))) {
+    return res.status(403).json({ 
+      success: false, 
+      message: 'Only employees can perform this action' 
     });
   }
+  
+  return res.render('error', {
+    title: 'Access Denied',
+    message: 'You do not have permission to access this page',
+    error: { status: 403 }
+  });
 };
 
 /**

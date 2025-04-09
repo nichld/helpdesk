@@ -97,12 +97,21 @@ exports.customerTicketDetail = async (req, res) => {
       });
     }
     
+    // Check if the customer has submitted feedback for this ticket
+    let hasFeedback = false;
+    if (req.session.user.role === 'customer' && (result.ticket.status === 'solved' || result.ticket.status === 'closed')) {
+      const feedbackService = require('../services/feedbackService');
+      const feedbackResult = await feedbackService.getTicketFeedback(id);
+      hasFeedback = feedbackResult.success && !!feedbackResult.feedback;
+    }
+    
     // User has permission, render the ticket page
     res.render('tickets/ticket-detail', {
       title: `Ticket: ${result.ticket.title}`,
       ticket: result.ticket,
       messages: result.messages,
-      isEmployee: isEmployee || isAdmin
+      isEmployee: isEmployee || isAdmin,
+      hasFeedback: hasFeedback
     });
   } catch (error) {
     console.error('Error in customerTicketDetail:', error);

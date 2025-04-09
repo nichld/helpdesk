@@ -1,0 +1,206 @@
+{
+  "users": [
+    {
+      "firstName": "John",
+      "lastName": "Doe",
+      "email": "john@example.com",
+      "password": "Password123",
+      "role": "customer",
+      "approved": true
+    },
+    {
+      "firstName": "Jane",
+      "lastName": "Smith",
+      "email": "jane@example.com",
+      "password": "Password123",
+      "role": "support-employee",
+      "approved": true
+    },
+    {
+      "firstName": "Mike",
+      "lastName": "Johnson",
+      "email": "mike@example.com",
+      "password": "Password123",
+      "role": "it-employee",
+      "approved": true
+    },
+    {
+      "firstName": "Sarah",
+      "lastName": "Williams",
+      "email": "sarah@example.com",
+      "password": "Password123",
+      "role": "customer",
+      "approved": true
+    },
+    {
+      "firstName": "Robert",
+      "lastName": "Brown",
+      "email": "robert@example.com",
+      "password": "Password123",
+      "role": "employee",
+      "approved": true
+    }
+  ],
+  "tickets": [
+    {
+      "title": "Cannot login to my account",
+      "description": "I've been trying to log in to my account for the past 2 days but keep getting an error message saying 'Invalid credentials'.",
+      "category": "Account",
+      "customer": "john@example.com",
+      "assignedTo": "jane@example.com",
+      "responsibleRole": "support-employee",
+      "status": "solved",
+      "priority": "high",
+      "createdAt": "2023-10-15T10:30:00Z",
+      "lastActivity": "2023-10-17T14:20:00Z"
+    },
+    {
+      "title": "Website is loading very slowly",
+      "description": "The website takes more than 30 seconds to load on both my laptop and phone.",
+      "category": "Technical Issue",
+      "customer": "sarah@example.com",
+      "assignedTo": "mike@example.com",
+      "responsibleRole": "it-employee",
+      "status": "in-progress",
+      "priority": "medium",
+      "createdAt": "2023-10-18T09:15:00Z",
+      "lastActivity": "2023-10-18T15:45:00Z"
+    },
+    {
+      "title": "Request for feature enhancement",
+      "description": "It would be great if you could add dark mode to the application.",
+      "category": "Feature Request",
+      "customer": "john@example.com",
+      "responsibleRole": "it-employee",
+      "status": "open",
+      "priority": "low",
+      "createdAt": "2023-10-19T16:20:00Z",
+      "lastActivity": "2023-10-19T16:20:00Z"
+    },
+    {
+      "title": "Billing discrepancy on my last invoice",
+      "description": "I was charged $55.99 but my plan should be $49.99 per month.",
+      "category": "Billing",
+      "customer": "sarah@example.com",
+      "assignedTo": "robert@example.com",
+      "responsibleRole": "support-employee",
+      "status": "closed",
+      "priority": "medium",
+      "createdAt": "2023-10-10T08:40:00Z",
+      "lastActivity": "2023-10-14T11:30:00Z"
+    }
+  ],
+  "messages": [
+    {
+      "ticket": "Cannot login to my account",
+      "sender": "john@example.com",
+      "content": "I've tried resetting my password but still can't get in.",
+      "contentType": "text",
+      "createdAt": "2023-10-15T10:30:00Z"
+    },
+    {
+      "ticket": "Cannot login to my account",
+      "sender": "jane@example.com",
+      "content": "Hi John, have you tried clearing your browser cache? Sometimes stored cookies can cause login issues.",
+      "contentType": "text",
+      "createdAt": "2023-10-15T11:15:00Z"
+    },
+    {
+      "ticket": "Cannot login to my account",
+      "sender": "john@example.com",
+      "content": "I just tried that but still having the same problem.",
+      "contentType": "text",
+      "createdAt": "2023-10-15T11:30:00Z"
+    },
+    {
+      "ticket": "Cannot login to my account",
+      "sender": "jane@example.com",
+      "content": "I've reset your account on our end. Please try logging in with the temporary password I've sent to your email.",
+      "contentType": "text",
+      "createdAt": "2023-10-16T09:45:00Z"
+    },
+    {
+      "ticket": "Cannot login to my account",
+      "sender": "john@example.com",
+      "content": "That worked! Thank you so much for your help.",
+      "contentType": "text",
+      "createdAt": "2023-10-17T14:20:00Z"
+    },
+    {
+      "ticket": "Website is loading very slowly",
+      "sender": "sarah@example.com",
+      "content": "The slowdown seems to happen especially when I try to load images.",
+      "contentType": "text",
+      "createdAt": "2023-10-18T09:15:00Z"
+    },
+    {
+      "ticket": "Website is loading very slowly",
+      "sender": "mike@example.com",
+      "content": "We're investigating this issue. Could you tell me which browser you're using?",
+      "contentType": "text",
+      "createdAt": "2023-10-18T10:20:00Z"
+    },
+    {
+      "ticket": "Website is loading very slowly",
+      "sender": "sarah@example.com",
+      "content": "I'm using Chrome version 118 on Windows 11.",
+      "contentType": "text",
+      "createdAt": "2023-10-18T10:35:00Z"
+    },
+    {
+      "ticket": "Website is loading very slowly",
+      "sender": "mike@example.com",
+      "content": "Thanks for that information. We're optimizing our image delivery service which should resolve this issue. I'll keep you updated on our progress.",
+      "contentType": "text",
+      "createdAt": "2023-10-18T15:45:00Z"
+    },
+    {
+      "ticket": "Billing discrepancy on my last invoice",
+      "sender": "sarah@example.com",
+      "content": "Here's a screenshot of my invoice showing the incorrect amount.",
+      "contentType": "text",
+      "createdAt": "2023-10-10T08:40:00Z"
+    },
+    {
+      "ticket": "Billing discrepancy on my last invoice",
+      "sender": "robert@example.com",
+      "content": "I've checked your account and you're right. The system didn't apply your loyalty discount. I'll process a refund for the difference right away.",
+      "contentType": "text",
+      "createdAt": "2023-10-10T10:15:00Z"
+    },
+    {
+      "ticket": "Billing discrepancy on my last invoice",
+      "sender": "sarah@example.com",
+      "content": "Thank you for handling this so quickly!",
+      "contentType": "text",
+      "createdAt": "2023-10-10T14:30:00Z"
+    },
+    {
+      "ticket": "Billing discrepancy on my last invoice",
+      "sender": "robert@example.com",
+      "content": "The refund has been processed and should appear on your account within 3-5 business days. I've also made sure the correct price is applied to your future invoices.",
+      "contentType": "text",
+      "createdAt": "2023-10-14T11:30:00Z"
+    }
+  ],
+  "feedback": [
+    {
+      "ticketTitle": "Cannot login to my account",
+      "submittedBy": "john@example.com",
+      "rating": 5,
+      "satisfactionLevel": "very-satisfied",
+      "timeToResolution": "appropriate",
+      "comments": "Jane was incredibly helpful and solved my problem quickly. Great service!",
+      "submittedAt": "2023-10-17T15:00:00Z"
+    },
+    {
+      "ticketTitle": "Billing discrepancy on my last invoice",
+      "submittedBy": "sarah@example.com",
+      "rating": 4,
+      "satisfactionLevel": "satisfied",
+      "timeToResolution": "quick",
+      "comments": "Resolved quickly and efficiently.",
+      "submittedAt": "2023-10-14T12:45:00Z"
+    }
+  ]
+}
