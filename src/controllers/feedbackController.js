@@ -85,8 +85,13 @@ exports.adminFeedback = async (req, res) => {
     if (rating) {
       filters.rating = parseInt(rating);
     }
-    if (satisfactionLevel) {
+    
+    if (satisfactionLevel && satisfactionLevel !== 'all') {
       filters.satisfactionLevel = satisfactionLevel;
+    }
+    
+    if (search) {
+      filters.search = search;
     }
     
     const result = await feedbackService.getAllFeedback(filters);
@@ -99,10 +104,11 @@ exports.adminFeedback = async (req, res) => {
       stats: statsResult.success ? statsResult.stats : null,
       filters: {
         rating: rating || '',
-        satisfactionLevel: satisfactionLevel || '',
+        satisfactionLevel: satisfactionLevel || 'all',
         search: search || ''
       },
       error: !result.success ? result.message : null,
+      success: req.query.success || null,
       isEmployee: true,
       isAdmin: req.session.user.role === 'admin'
     });
@@ -112,7 +118,7 @@ exports.adminFeedback = async (req, res) => {
       title: 'Customer Feedback',
       feedbacks: [],
       stats: null,
-      filters: { rating: '', satisfactionLevel: '', search: '' },
+      filters: { rating: '', satisfactionLevel: 'all', search: '' },
       error: 'An error occurred while loading feedback data',
       isEmployee: true,
       isAdmin: req.session.user.role === 'admin'

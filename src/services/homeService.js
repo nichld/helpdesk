@@ -9,6 +9,5 @@
 exports.getHomePageData = () => {
   return {
     title: 'EJS Template',
-    message: 'Easy Boilerplate, EJS Template',
   };
 }
