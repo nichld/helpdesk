@@ -32,9 +32,3 @@ exports.homePage = (req, res) => {
  * @param {Object} req - Express request object
  * @param {Object} res - Express response object
  */
-exports.guidesPage = (req, res) => {
-  const pageData = homeService.getGuidesPageData();
-  
-  res.render('pages/guides/index', {
-    ...pageData
-  });
