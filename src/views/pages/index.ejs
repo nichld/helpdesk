@@ -1,4 +1,4 @@
-<div class="gap-6 flex flex-col">
+<div class="gap-6 flex flex-col max-w-[1000px] mx-auto">
   <img src="https://images.unsplash.com/photo-1544027993-37dbfe43562a?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
       alt="" class="object-cover w-full rounded-lg aspect-[18/6]">
   <div class="flex justify-between items-center">
@@ -6,13 +6,68 @@
       <p class="text-lg">by &copy; ldutvikling</p>
   </div>
   <p class="text-lg text-gray-500">A simple helpdesk system for managing support tickets.</p>
-  <!-- 
-  Section for getting in touch with us for getting access to the system.
-
-  -->
+  
+  <!-- FAQ Accordion Section -->
+  <div class="mt-8">
+    <h2 class="text-3xl font-semibold mb-6">Frequently Asked Questions</h2>
+    <!-- Changed styling to match tickets table -->
+    <div class="bg-white border border-gray-200 rounded-lg overflow-hidden divide-y divide-gray-200">
+      <% faqs.forEach((faq) => { %>
+        <div class="bg-white hover:bg-gray-50 cursor-pointer transition-colors" data-faq-item onclick="toggleAccordion('<%= faq.id %>')">
+          <div class="flex justify-between items-center py-4 px-6 text-left text-sm font-medium text-gray-900">
+            <span><%= faq.title %></span>
+            <svg class="h-5 w-5 transform transition-transform text-gray-500" id="chevron-<%= faq.id %>" 
+                 xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+            </svg>
+          </div>
+          <div class="text-sm text-gray-500 px-6 pb-4 hidden" id="content-<%= faq.id %>">
+            <%= faq.content %>
+          </div>
+        </div>
+      <% }); %>
+    </div>
+  </div>
+  
+  <!-- Contact Section -->
   <div>
       <h2 class="text-2xl font-semibold">Contact Us</h2>
       <p class="text-lg">For access to the system, please reach out to our support team.</p>
       <a href="mailto:support@ldutvikling.com" class="text-blue-500">Email Support</a>
   </div>
 </div>
+
+<!-- Add Accordion JavaScript -->
+<script>
+  function toggleAccordion(id) {
+    // Toggle content visibility
+    const content = document.getElementById(`content-${id}`);
+    content.classList.toggle('hidden');
+    
+    // Rotate chevron
+    const chevron = document.getElementById(`chevron-${id}`);
+    chevron.classList.toggle('rotate-180');
+    
+    // Close other accordions (optional - for "single" type behavior)
+    const allContents = document.querySelectorAll('[id^="content-"]');
+    const allChevrons = document.querySelectorAll('[id^="chevron-"]');
+    
+    allContents.forEach(item => {
+      if (item.id !== `content-${id}` && !item.classList.contains('hidden')) {
+        item.classList.add('hidden');
+      }
+    });
+    
+    allChevrons.forEach(item => {
+      if (item.id !== `chevron-${id}` && item.classList.contains('rotate-180')) {
+        item.classList.remove('rotate-180');
+      }
+    });
+  }
+  
+  // Open the first accordion by default (optional)
+  document.addEventListener('DOMContentLoaded', function() {
+    // Open the third FAQ item (index 2) by default as per your request
+    setTimeout(() => toggleAccordion('3'), 100);
+  });
+</script>

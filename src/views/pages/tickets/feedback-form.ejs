@@ -223,10 +223,11 @@
         
         if (data.success) {
           // Show success and redirect
-          window.showToast('Feedback submitted successfully! Thank you.', 'success');
+          window.showToast(data.message || 'Feedback submitted successfully! Thank you.', 'success');
           
           setTimeout(() => {
-            window.location.href = '/tickets/<%= ticketId %>';
+            // Use the redirect URL from the response if available
+            window.location.href = data.redirectUrl || `/tickets/<%= ticketId %>`;
           }, 1500);
         } else {
           window.showToast(data.message || 'Failed to submit feedback', 'error');

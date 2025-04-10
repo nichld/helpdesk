@@ -1,0 +1,22 @@
+[
+  {
+    "id": "1",
+    "title": "What is this helpdesk system?",
+    "content": "Our helpdesk system is a simple yet powerful solution for managing support tickets. It allows customers to submit issues and track their resolution while providing support staff with tools to manage and resolve tickets efficiently."
+  },
+  {
+    "id": "2",
+    "title": "How do I get access to the system?",
+    "content": "To access the system, you'll need to register for an account and have it approved by an administrator. Contact our support team using the email provided on the homepage to expedite this process."
+  },
+  {
+    "id": "3",
+    "title": "How quickly can I expect a response to my ticket?",
+    "content": "We aim to respond to all tickets within 24 business hours. Tickets marked with higher priority are typically addressed sooner based on our team's assessment of urgency and impact."
+  },
+  {
+    "id": "4",
+    "title": "Can I track the status of my tickets?",
+    "content": "Yes, once logged in, you can view all your submitted tickets and their current status. You'll also receive notifications about updates and can respond to support messages directly through the system."
+  }
+]

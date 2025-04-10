@@ -57,11 +57,20 @@ exports.getAllTickets = async (filters = {}) => {
       query.assignedTo = filters.assignedTo;
     }
     
+    // Add support for responsibleRole filter
+    if (filters.responsibleRole) {
+      query.responsibleRole = filters.responsibleRole;
+    }
+    
+    console.log('Ticket query:', JSON.stringify(query)); // Add logging to help with debugging
+    
     // Get tickets with populated fields
     const tickets = await Ticket.find(query)
       .populate('customer', 'firstName lastName email profileImage')
       .populate('assignedTo', 'firstName lastName email profileImage')
       .sort({ lastActivity: -1 });
+    
+    console.log(`Found ${tickets.length} tickets matching query`); // Log count for debugging
     
     return {
       success: true,

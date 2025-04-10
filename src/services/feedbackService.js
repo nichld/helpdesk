@@ -161,18 +161,39 @@ exports.getAllFeedback = async (filters = {}) => {
           select: 'firstName lastName email'
         }
       })
+      .populate('submittedBy', 'firstName lastName email')
       .sort({ submittedAt: -1 });
     
     console.log(`Found ${feedbacks.length} feedbacks`);
     
+    // Apply search filtering in memory if search term is provided
+    let filteredFeedbacks = feedbacks;
+    if (filters.search && filters.search.trim()) {
+      const searchTerm = filters.search.trim().toLowerCase();
+      filteredFeedbacks = feedbacks.filter(feedback => {
+        // Search in ticket title if available
+        const titleMatch = feedback.ticketSnapshot && 
+          feedback.ticketSnapshot.title &&
+          feedback.ticketSnapshot.title.toLowerCase().includes(searchTerm);
+        
+        // Search in comments
+        const commentsMatch = feedback.comments && 
+          feedback.comments.toLowerCase().includes(searchTerm);
+        
+        // Search in customer name if available
+        const customerMatch = feedback.ticketSnapshot && 
+          feedback.ticketSnapshot.customer && 
+          `${feedback.ticketSnapshot.customer.firstName} ${feedback.ticketSnapshot.customer.lastName}`
+            .toLowerCase().includes(searchTerm);
+        
+        return titleMatch || commentsMatch || customerMatch;
+      });
+    }
+    
     // Process each feedback
-    const processedFeedbacks = feedbacks.map(feedback => {
+    const processedFeedbacks = filteredFeedbacks.map(feedback => {
       // Convert to plain object to allow adding new properties
       const feedbackObj = feedback.toObject();
-      
-      // We're assuming ticketSnapshot already contains the necessary data
-      // No need to create it from ticketId 
-      
       return feedbackObj;
     });
     

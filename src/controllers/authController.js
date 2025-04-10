@@ -93,28 +93,43 @@ exports.waitingApproval = (req, res) => {
  */
 exports.register = async (req, res) => {
   try {
-    const { firstName, lastName, email, password, confirmPassword } = req.body;
-
-    // Validate inputs
-    if (!firstName || !lastName || !email || !password || !confirmPassword) {
+    const { firstName, lastName, email, password } = req.body;
+    
+    // Debug information
+    console.log('Registration attempt with data:', {
+      firstName: firstName || '[empty]',
+      lastName: lastName || '[empty]',
+      email: email || '[empty]', 
+      password: password ? '[provided]' : '[empty]'
+    });
+    
+    // Check if all fields are provided - FIX: more precise validation
+    if (!firstName || !lastName || !email || !password) {
+      const missingFields = [];
+      if (!firstName) missingFields.push('First Name');
+      if (!lastName) missingFields.push('Last Name');
+      if (!email) missingFields.push('Email');
+      if (!password) missingFields.push('Password');
+      
       return res.render('auth/register', {
         title: 'Register',
-        error: 'All fields are required',
-        form: { firstName, lastName, email }
+        error: `Missing required fields: ${missingFields.join(', ')}`,
+        formData: { firstName, lastName, email }
+      });
+    }
+    
+    // Check email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.render('auth/register', {
+        title: 'Register',
+        error: 'Please enter a valid email address',
+        formData: { firstName, lastName, email }
       });
     }
 
-    // Check if passwords match
-    if (password !== confirmPassword) {
-      return res.render('auth/register', {
-        title: 'Register',
-        error: 'Passwords do not match',
-        form: { firstName, lastName, email }
-      });
-    }
-
-    // Register the user through the auth service
-    const result = await authService.register(firstName, lastName, email, password);
+    // Register the user through the auth service - FIXED: using registerUser instead of register
+    const result = await authService.registerUser(firstName, lastName, email, password);
 
     if (!result.success) {
       return res.render('auth/register', {
@@ -141,11 +156,11 @@ exports.register = async (req, res) => {
       return res.redirect('/');
     }
   } catch (error) {
-    console.error('Error in register:', error);
-    return res.render('auth/register', {
+    console.error('Registration error:', error);
+    res.render('auth/register', {
       title: 'Register',
-      error: 'An error occurred during registration',
-      form: req.body
+      error: 'An error occurred during registration. Please try again.',
+      formData: req.body
     });
   }
 };
@@ -189,16 +204,7 @@ exports.profile = async (req, res) => {
  */
 exports.updateProfile = async (req, res) => {
   try {
-    const { firstName, lastName, email, profileImage, bio, currentPassword, newPassword, confirmPassword } = req.body;
-    
-    // Validate passwords match if changing password
-    if (newPassword && newPassword !== confirmPassword) {
-      return res.render('auth/profile', {
-        title: 'Your Profile',
-        user: await User.findById(req.session.user.id).select('-password'),
-        error: 'New passwords do not match.'
-      });
-    }
+    const { firstName, lastName, email, profileImage, bio, currentPassword, newPassword } = req.body;
     
     const result = await authService.updateUserProfile(
       req.session.user.id, 
