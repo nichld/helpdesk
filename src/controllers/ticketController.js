@@ -30,6 +30,9 @@ exports.customerTickets = async (req, res) => {
       );
     }
     
+    // Import the ticket constants
+    const ticketConstants = require('../config/ticketConstants');
+    
     res.render('tickets/customer-tickets', {
       title: 'My Tickets',
       tickets: filteredTickets,
@@ -38,7 +41,8 @@ exports.customerTickets = async (req, res) => {
         search: search || ''
       },
       error: !result.success ? result.message : null,
-      success: req.query.success || null
+      success: req.query.success || null,
+      ticketConstants // Now available in the view
     });
   } catch (error) {
     console.error('Error in customerTickets:', error);
@@ -347,11 +351,17 @@ exports.employeeTickets = async (req, res) => {
     if (responsibleRole && responsibleRole !== 'all') filters.responsibleRole = responsibleRole;
     
     // Apply role-based filtering automatically if user is support or IT employee
-    if (req.session.user.role === 'support-employee' && !responsibleRole) {
-      filters.responsibleRole = 'support-employee';
-    } else if (req.session.user.role === 'it-employee' && !responsibleRole) {
-      filters.responsibleRole = 'it-employee';
+    // but only if responsibleRole is not explicitly set in the query
+    if (!responsibleRole || responsibleRole === 'all') {
+      if (req.session.user.role === 'support-employee') {
+        filters.responsibleRole = 'support-employee';
+      } else if (req.session.user.role === 'it-employee') {
+        filters.responsibleRole = 'it-employee';
+      }
+      // Admins and general employees will see all tickets by default
     }
+    
+    console.log('Applied filters:', JSON.stringify(filters)); // Add logging
     
     const result = await ticketService.getAllTickets(filters);
     
@@ -364,6 +374,8 @@ exports.employeeTickets = async (req, res) => {
         (ticket.description && ticket.description.toLowerCase().includes(searchTerm))
       );
     }
+    
+    console.log(`Displaying ${filteredTickets.length} tickets after all filtering`); // Log final count
     
     // Import the ticket constants to pass to the template
     const ticketConstants = require('../config/ticketConstants');
@@ -379,7 +391,8 @@ exports.employeeTickets = async (req, res) => {
         search: search || ''
       },
       ticketConstants: ticketConstants, // Pass the constants to the template
-      error: !result.success ? result.message : null
+      error: !result.success ? result.message : null,
+      success: req.query.success || null
     });
   } catch (error) {
     console.error('Error in employeeTickets:', error);
@@ -387,6 +400,7 @@ exports.employeeTickets = async (req, res) => {
       title: 'All Tickets',
       tickets: [],
       filters: { status: 'all', priority: 'all', category: 'all', responsibleRole: 'all', search: '' },
+      ticketConstants: require('../config/ticketConstants'), // Make sure constants are available even in error case
       error: 'An error occurred while loading tickets'
     });
   }
@@ -397,33 +411,50 @@ exports.employeeTickets = async (req, res) => {
  */
 exports.employeeAssignedTickets = async (req, res) => {
   try {
-    const { status } = req.query;
+    const { status, search } = req.query;
     
     // Get tickets assigned to the current employee
     const filters = {
       assignedTo: req.session.user.id
     };
     
-    if (status) filters.status = status;
+    if (status && status !== 'all') {
+      filters.status = status;
+    }
     
     const result = await ticketService.getAllTickets(filters);
+    
+    // Apply search filtering if provided
+    let filteredTickets = result.success ? result.tickets : [];
+    if (search && search.trim()) {
+      const searchTerm = search.trim().toLowerCase();
+      filteredTickets = filteredTickets.filter(ticket => 
+        ticket.title.toLowerCase().includes(searchTerm) || 
+        (ticket.description && ticket.description.toLowerCase().includes(searchTerm))
+      );
+    }
     
     // Import the ticket constants
     const ticketConstants = require('../config/ticketConstants');
     
     res.render('tickets/employee-assigned', {
       title: 'My Assigned Tickets',
-      tickets: result.success ? result.tickets : [],
-      filter: status || 'all',
-      ticketConstants: ticketConstants, // Pass the constants to the template
-      error: !result.success ? result.message : null
+      tickets: filteredTickets,
+      filters: {
+        status: status || 'all',
+        search: search || ''
+      },
+      ticketConstants: ticketConstants,
+      error: !result.success ? result.message : null,
+      success: req.query.success || null
     });
   } catch (error) {
     console.error('Error in employeeAssignedTickets:', error);
     res.render('tickets/employee-assigned', {
       title: 'My Assigned Tickets',
       tickets: [],
-      filter: 'all',
+      filters: { status: 'all', search: '' },
+      ticketConstants: require('../config/ticketConstants'),
       error: 'An error occurred while loading assigned tickets'
     });
   }
