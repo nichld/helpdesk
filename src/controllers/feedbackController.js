@@ -29,8 +29,12 @@ exports.submitFeedback = async (req, res) => {
       });
     }
     
-    // Redirect back to the ticket with thank you message
-    return res.redirect(`/tickets/${ticketId}?success=Thank you for your feedback!`);
+    // Return JSON success response instead of redirecting
+    return res.status(200).json({
+      success: true,
+      message: 'Thank you for your feedback!',
+      redirectUrl: `/tickets/${ticketId}?success=Thank you for your feedback!`
+    });
   } catch (error) {
     console.error('Error in submitFeedback:', error);
     res.status(500).json({
