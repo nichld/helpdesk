@@ -26,3 +26,15 @@ exports.homePage = (req, res) => {
     faqs: faqs
   });
 };
+
+/**
+ * Render the guides page
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ */
+exports.guidesPage = (req, res) => {
+  const pageData = homeService.getGuidesPageData();
+  
+  res.render('pages/guides/index', {
+    ...pageData
+  });
